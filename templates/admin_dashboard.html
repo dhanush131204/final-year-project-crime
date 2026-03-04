@@ -1,0 +1,107 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Admin Dashboard | DNA Honey{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash">
+  {% for category, message in messages %}
+  <div class="{{ category }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="welcome-section">
+  <h2 class="welcome-title">Welcome to DNA Honey Forensic System</h2>
+  <p class="welcome-text">Secure management of criminal records with advanced deception techniques</p>
+</div>
+
+<div class="cards">
+  <div class="stat-card">
+    <div class="stat-title">Total Records</div>
+    <div class="stat-value">{{ records|length }}</div>
+    <div class="stat-desc"><a class="btn small" href="{{ url_for('admin_records') }}">View All</a></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-title">Key Management</div>
+    <div class="stat-value">Generate & Revoke</div>
+    <div class="stat-desc"><a class="btn small" href="{{ url_for('admin_keys') }}">Open Keys</a></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-title">Add Criminal</div>
+    <div class="stat-value">Upload + Tile</div>
+    <div class="stat-desc"><a class="btn small" href="{{ url_for('admin_add_record_page') }}">New Record</a></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Recent Records</h3>
+    {% if records %}
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Verifier Email</th>
+            <th>Crime Type</th>
+            <th>Honey</th>
+            <th>Tiles</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.mobile or '-' }}</td>
+            <td>{{ r.crime_type }}</td>
+            <td>{% if r.honey_path %}<a target="_blank"
+                href="{{ url_for('admin_record_honey', record_id=r.id) }}">Open</a>{% else %}-{% endif %}</td>
+            <td>{% if r.tile_dir %}<a href="{{ url_for('admin_record_tiles', record_id=r.id) }}">Browse</a>{% else %}-{%
+              endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="no-data">No records yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Recent Access Logs</h3>
+    {% if logs %}
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Actor</th>
+            <th>Action</th>
+            <th>Details</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in logs %}
+          <tr>
+            <td>{{ l.timestamp.split('T')[0] }}<br><small>{{ l.timestamp.split('T')[1].split('.')[0] }}</small></td>
+            <td>{{ l.actor }}</td>
+            <td>{{ l.action }}</td>
+            <td>{{ l.details or '-' }}</td>
+            <td>{{ l.ip }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="no-data">No logs yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

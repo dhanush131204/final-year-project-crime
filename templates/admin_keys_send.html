@@ -1,0 +1,43 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Send Key | DNA Honey{% endblock %}
+{% block page_title %}Send Access Key{% endblock %}
+{% block content %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="center-form">
+    <div class="form-card">
+      <h2>Send Access Key</h2>
+      <form method="post" action="{{ url_for('admin_keys_send') }}">
+        <label for="record_id">Criminal Record</label>
+        <select id="record_id" name="record_id" required>
+          <option value="">-- Choose Record --</option>
+          {% for r in records %}
+          <option value="{{ r.id }}">#{{ r.id }} - {{ r.name }}</option>
+          {% endfor %}
+        </select>
+        
+        <label for="contact">Verifier Contact</label>
+        <select id="contact_type" name="contact_type" required>
+          <option value="email">Email Address</option>
+          <option value="sms">Phone Number (SMS)</option>
+        </select>
+        
+        <input type="text" id="contact" name="contact" placeholder="Enter email or phone number" required />
+        
+        <button type="submit">Generate & Send Key</button>
+      </form>
+      
+      <p style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('admin_keys') }}" style="color: #00d4ff; text-decoration: none;">← Back to Keys</a>
+      </p>
+    </div>
+  </div>
+{% endblock %}

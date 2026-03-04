@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criminal Record | DNA Honey</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="brand">
+       
+        <div class="brand-text">
+          <div class="title">DNA Forensic</div>
+          <div class="sub">Verifier Panel</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="{{ url_for('verifier_view') }}" class="nav-item"> Search Records</a>
+        <a href="{{ url_for('logout') }}" class="nav-item"> Logout</a>
+      </div>
+    </div>
+    
+    <div class="main">
+      <div class="topbar">
+        <div class="page-title">Criminal Record Details</div>
+        <div>
+          <span style="color: #a0a0a0; margin-right: 15px;">{{ get_indian_time().strftime('%d/%m/%Y %I:%M %p IST') }}</span>
+          {% if session.get('verifier') %}
+            <span class="badge">{{ session['verifier'] }}</span>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="content">
+        <div class="card">
+          <h3>Criminal Record</h3>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>NAME</th>
+                  <th>CRIME TYPE</th>
+                  <th>EVIDENCE</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{{ record_id }}</td>
+                  <td>{{ name }}</td>
+                  <td>{{ crime_type }}</td>
+                  <td>
+                    <a href="{{ download_url }}" class="btn small">Download</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

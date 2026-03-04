@@ -1,0 +1,7 @@
+Flask
+Pillow
+Werkzeug
+pytz
+twilio
+watchdog>=4.0.0
+python-dotenv

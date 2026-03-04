@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DNA Honey Deception System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="bg">
+  <div class="overlay"></div>
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <h2>DNA Forensic System</h2>
+      </div>
+      <div class="nav-menu">
+        <a href="{{ url_for('login_admin') }}" class="nav-link admin-link">
+          <span>Admin Login</span>
+        </a>
+        <a href="{{ url_for('login_verifier') }}" class="nav-link verifier-link">
+          <span>Verifier Login</span>
+        </a>
+        <a href="{{ url_for('register_verifier') }}" class="nav-link register-link">
+          <span>New Registration</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="center-content">
+    <h1 class="center-heading">
+      DNA Honey Deception System
+      <br>
+      for Secure Crime Records
+    </h1>
+  </div>
+</body>
+</html>

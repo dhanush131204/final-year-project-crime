@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin | DNA Honey{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg">
+  <div class="overlay"></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🔬</div>
+        <div class="brand-text">
+          <div class="title">DNA Honey</div>
+          <div class="sub">Forensic Records</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="nav-item{% if request.path == '/admin' %} active{% endif %}" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a class="nav-item{% if request.path.startswith('/admin/records') and request.path != '/admin/records/new' %} active{% endif %}" href="{{ url_for('admin_records') }}">Records</a>
+        <a class="nav-item{% if request.path == '/admin/records/new' %} active{% endif %}" href="{{ url_for('admin_add_record_page') }}">Add Criminal</a>
+        <a class="nav-item{% if request.path.startswith('/admin/keys') %} active{% endif %}" href="{{ url_for('admin_keys') }}">Keys</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a class="nav-item" href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="page-title">{% block page_title %}Admin{% endblock %}</div>
+        <div class="top-actions">
+          <span class="badge">{{ 'admin:' + session.get('admin', 'unknown') }}</span>
+        </div>
+      </div>
+
+      <div class="content">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+</body>
+</html>

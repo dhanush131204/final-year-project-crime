@@ -1,0 +1,57 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Keys | DNA Honey{% endblock %}
+{% block page_title %}Access Keys{% endblock %}
+{% block content %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="center-form">
+    <div class="form-card">
+      <h2>Access Key Management</h2>
+      <p style="text-align: center; margin-bottom: 30px; color: #e0e0e0;">Generate and send access keys to verifiers</p>
+      
+      <a href="{{ url_for('admin_keys_send') }}" class="btn" style="width: 100%; text-decoration: none; display: block; text-align: center;">Send Key to Email Address</a>
+    </div>
+  </div>
+
+  {% if keys %}
+  <div class="card" style="margin-top: 30px;">
+    <h3>Generated Keys</h3>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Record</th>
+            <th>Access Key</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in keys %}
+          <tr>
+            <td>#{{ k.record_id }} - {{ k.name or 'Unknown' }}</td>
+            <td><code style="background: rgba(0,212,255,0.1); padding: 4px 8px; border-radius: 4px;">{{ k.secret_key }}</code></td>
+            <td>
+              {% if k.valid %}
+                <span style="color: #36d399;">Active</span>
+              {% else %}
+                <span style="color: #ff5d5d;">Revoked</span>
+              {% endif %}
+            </td>
+            <td>{{ k.created_at.split('T')[0] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Tiles | DNA Honey{% endblock %}
+{% block page_title %}Tile Browser{% endblock %}
+{% block content %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="card">
+    <div class="header-row">
+      <h3>Tiles for {{ record.name }} (ID: {{ record.id }})</h3>
+      <a class="btn small" href="{{ url_for('admin_records') }}">Back to Records</a>
+    </div>
+
+    {% if tile_urls %}
+      <div class="tiles-grid">
+        {% for tile_url in tile_urls %}
+          <a href="{{ tile_url }}" target="_blank" class="tile-card">
+            <img src="{{ tile_url }}" alt="Tile {{ loop.index }}">
+            <div class="tile-meta">Tile {{ loop.index }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No tile images found for this record.</p>
+    {% endif %}
+  </div>
+{% endblock %}

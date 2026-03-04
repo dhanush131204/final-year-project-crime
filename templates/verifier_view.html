@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifier | DNA Honey</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="bg">
+  <div class="overlay"></div>
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <h2>Verifier Panel</h2>
+      </div>
+      <div class="nav-menu">
+        {% if session.get('verifier') %}
+          <span class="badge">{{ session['verifier'] }}</span>
+          <a href="{{ url_for('logout') }}" class="nav-link">
+            <span>Logout</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <div class="center-content">
+    <div class="form-card">
+      {% if error %}
+        <div class="flash"><div class="error">{{ error }}</div></div>
+      {% endif %}
+      {% if info %}
+        <div class="flash"><div class="info">{{ info }}</div></div>
+      {% endif %}
+
+      <h3>Enter Decryption Key</h3>
+      <form method="post" action="{{ url_for('verifier_retrieve') }}">
+        <label>Secret Key</label>
+        <input type="text" name="key" placeholder="Enter access key here" required />
+        <button type="submit">Retrieve Record</button>
+      </form>
+
+      <p style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('index') }}" style="color: #00d4ff; text-decoration: none;">← Back to Home</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

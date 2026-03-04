@@ -1,0 +1,36 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Add Criminal | DNA Honey{% endblock %}
+{% block page_title %}Add Criminal{% endblock %}
+{% block content %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="center-form">
+    <div class="form-card">
+      <h2>Add New Criminal Record</h2>
+      <form action="{{ url_for('admin_add_record_page') }}" method="post" enctype="multipart/form-data">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" placeholder="Enter full name" required />
+        
+        <label for="mobile">Verifier Email Address</label>
+        <input type="email" id="mobile" name="mobile" placeholder="Enter verifier's email address" required />
+        
+        <label for="crime_type">Crime Type</label>
+        <input type="text" id="crime_type" name="crime_type" placeholder="e.g., Burglary, Theft, Assault" required />
+        
+        <label for="file">Upload Photo/Fingerprint</label>
+        <input type="file" id="file" name="file" accept="image/*" required />
+        <small style="color: #a0a0a0; font-size: 0.85rem; margin-top: -15px; display: block;">Supported formats: PNG, JPG, JPEG</small>
+        
+        <button type="submit">Upload & Process Record</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}
