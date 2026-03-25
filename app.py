@@ -1200,7 +1200,7 @@ def verifier_retrieve():
             decoy_record = cur.fetchone()
             
             if decoy_record:
-                log_event(f"verifier:{session.get('verifier')}", "protection_triggered", f"Invalid key used, served secure protection data")
+                log_event(f"verifier:{session.get('verifier')}", "honey_triggered", f"Invalid key used, served secure protection data")
                 return render_template(
                     "verifier_result.html",
                     record_id=f"H{decoy_record['id']}",

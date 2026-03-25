@@ -179,6 +179,7 @@ def get_random_honey_data(original_name=""):
         "name":          name,
         "age_gender":    f"{random.randint(22, 55)} / {target_gender}",
         "address":       random.choice(addrs),
+        "crime_type":    random.choice(["Assault", "Theft", "Cyber Crime", "Official Record", "Fraud", "Narcotics"]),
         "ps1":           random.choice(stations),
         "fir1":          f"{random.randint(100, 999)}/{random.randint(2018, 2024)}",
         "ps2":           random.choice(stations),
