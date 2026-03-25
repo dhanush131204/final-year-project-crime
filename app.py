@@ -32,6 +32,9 @@ from utils.honey_logic import generate_honey_image
 # Indian timezone
 INDIAN_TZ = pytz.timezone('Asia/Kolkata')
 
+# Document Generator
+from utils.document_generator import generate_official_document, get_random_honey_data
+
 # Email Configuration
 GMAIL_USER = os.getenv('GMAIL_USER')
 GMAIL_APP_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
@@ -51,16 +54,17 @@ DB_DIR = BASE_DIR / "database"
 DB_PATH = DB_DIR / "records.db"
 
 STATIC_DIR = BASE_DIR / "static"
-UPLOAD_DIR = STATIC_DIR / "uploads"
+UPLOAD_DIR = STATIC_DIR / "records" / "primary_vault"
 TILES_DIR = STATIC_DIR / "tiles"
-HONEY_DIR = STATIC_DIR / "honey_data"
+HONEY_DIR = STATIC_DIR / "records" / "decoy_vault"
+HONEY_POOL = STATIC_DIR / "honey_pool"
 
 TEMPLATES_DIR = BASE_DIR / "templates"
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
 # Create required folders
-for d in [DB_DIR, UPLOAD_DIR, TILES_DIR, HONEY_DIR]:
+for d in [DB_DIR, UPLOAD_DIR, TILES_DIR, HONEY_DIR, HONEY_POOL]:
     d.mkdir(parents=True, exist_ok=True)
 
 app = Flask(
@@ -124,6 +128,20 @@ def init_db():
         photo_path TEXT,
         tile_dir TEXT,
         honey_path TEXT,
+        age_gender TEXT,
+        address TEXT,
+        ps1 TEXT,
+        fir1 TEXT,
+        ps2 TEXT,
+        fir2 TEXT,
+        ps3 TEXT,
+        arrest_date TEXT,
+        case1 TEXT,
+        ps4_section TEXT,
+        case2 TEXT,
+        id_marks TEXT,
+        honey_name TEXT,
+        honey_crime_type TEXT,
         created_at TEXT
     )
     """)
@@ -145,9 +163,26 @@ def init_db():
         action TEXT,
         details TEXT,
         ip TEXT,
+        user_agent TEXT,
         timestamp TEXT
     )
     """)
+
+    # Migration for logs: Add user_agent if it doesn't exist
+    cur.execute("PRAGMA table_info(logs)")
+    cols = [row[1] for row in cur.fetchall()]
+    if "user_agent" not in cols:
+        cur.execute("ALTER TABLE logs ADD COLUMN user_agent TEXT")
+
+    # Migration for criminals: Add new columns if they don't exist
+    cur.execute("PRAGMA table_info(criminals)")
+    criminal_cols = [row[1] for row in cur.fetchall()]
+    if "id_marks" not in criminal_cols:
+        cur.execute("ALTER TABLE criminals ADD COLUMN id_marks TEXT")
+    if "honey_name" not in criminal_cols:
+        cur.execute("ALTER TABLE criminals ADD COLUMN honey_name TEXT")
+    if "honey_crime_type" not in criminal_cols:
+        cur.execute("ALTER TABLE criminals ADD COLUMN honey_crime_type TEXT")
 
     # Default Admin
     cur.execute("SELECT id FROM users WHERE role='admin'")
@@ -171,12 +206,13 @@ def log_event(actor, action, details=None):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO logs(actor, action, details, ip, timestamp) VALUES (?,?,?,?,?)",
+        "INSERT INTO logs(actor, action, details, ip, user_agent, timestamp) VALUES (?,?,?,?,?,?)",
         (
             actor,
             action,
             details,
             request.remote_addr,
+            request.user_agent.string,
             get_indian_time().isoformat(),
         ),
     )
@@ -297,8 +333,9 @@ def login_admin():
             return redirect(url_for("admin_dashboard"))
         else:
             flash("Invalid Admin Credentials", "error")
-
-    return render_template("login_admin.html")
+            return redirect(url_for("index", auth_error=1))
+            
+    return redirect(url_for("index", _anchor="login"))
 
 
 def require_admin():
@@ -333,8 +370,9 @@ def login_verifier():
             return redirect(url_for("verifier_view"))
         else:
             flash("Invalid Verifier Credentials", "error")
+            return redirect(url_for("index", auth_error=1))
 
-    return render_template("login_verifier.html")
+    return redirect(url_for("index", _anchor="login"))
 
 
 @app.route("/register/verifier", methods=["GET", "POST"])
@@ -362,18 +400,61 @@ def register_verifier():
             )
             conn.commit()
             flash("Registration Successful", "success")
-            return redirect(url_for("login_verifier"))
+            return redirect(url_for("index", _anchor="login"))
         except sqlite3.IntegrityError:
             flash("Username already exists", "error")
+            return redirect(url_for("index", auth_error=1))
         finally:
             conn.close()
 
-    return render_template("register_verifier.html")
+    return redirect(url_for("index", _anchor="register"))
 
 
 # -------------------------------------------------
 # Admin Dashboard
 # -------------------------------------------------
+
+@app.route("/admin/analytics")
+def admin_analytics():
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+    
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # Total access logs
+    cur.execute("SELECT COUNT(*) FROM logs")
+    total_logs = cur.fetchone()[0]
+    
+    # Honey Pot triggers
+    cur.execute("SELECT COUNT(*) FROM logs WHERE action = 'honey_triggered'")
+    honey_triggers = cur.fetchone()[0]
+    
+    # Top 5 Intruder IPs
+    cur.execute("SELECT ip, COUNT(*) as count FROM logs WHERE action = 'honey_triggered' GROUP BY ip ORDER BY count DESC LIMIT 5")
+    intruder_ips = cur.fetchall()
+    
+    # Recent Honey Pot activity
+    cur.execute("SELECT * FROM logs WHERE action = 'honey_triggered' ORDER BY timestamp DESC LIMIT 10")
+    recent_honey = cur.fetchall()
+    
+    conn.close()
+    
+    # Calculate interception rate
+    rate = 0
+    cur_access_attempts = total_logs # Total interactions
+    if cur_access_attempts > 0:
+        rate = round((honey_triggers / cur_access_attempts) * 100, 1)
+
+    return render_template(
+        "admin_analytics.html", 
+        total_logs=total_logs, 
+        honey_triggers=honey_triggers, 
+        intruder_ips=intruder_ips,
+        recent_honey=recent_honey,
+        rate=rate
+    )
+
 
 @app.route("/admin")
 def admin_dashboard():
@@ -403,6 +484,32 @@ def admin_records():
     conn.close()
     
     return render_template("admin_records.html", records=records)
+
+
+@app.route("/admin/records/<int:record_id>/original")
+def admin_record_original(record_id):
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT name, photo_path FROM criminals WHERE id = ?", (record_id,))
+    record = cur.fetchone()
+    conn.close()
+
+    if not record:
+        flash("Record not found", "error")
+        return redirect(url_for("admin_records"))
+
+    # photo_path stores the original doc in the primary vault
+    photo_rel = to_static_filename(record["photo_path"])
+    if photo_rel:
+        photo_path = STATIC_DIR / photo_rel
+        if photo_path.exists():
+            return redirect(url_for("static", filename=photo_rel))
+
+    flash("Original forensic record not found", "error")
+    return redirect(url_for("admin_records"))
 
 
 @app.route("/admin/records/<int:record_id>/tiles")
@@ -530,7 +637,7 @@ def admin_record_honey(record_id):
     except Exception as e:
         print(f"Failed to generate honey on fly: {e}")
 
-    flash("Honey image not found and could not be generated", "error")
+    flash("Protected image not found and could not be generated", "error")
     return redirect(url_for("admin_records"))
 
 
@@ -705,44 +812,75 @@ def admin_add_record_page():
             return render_template("admin_add_record.html")
         
         if not file or not allowed_file(file.filename):
-            flash("Please upload a valid image file (PNG, JPG, JPEG)", "error")
+            flash("Invalid file format. Please upload a real JPG or PNG image.", "error")
             return render_template("admin_add_record.html")
         
         try:
-            # Save uploaded file
+            # Verify if it's a real image content
+            from PIL import Image
+            try:
+                img_test = Image.open(file)
+                img_test.verify() # Basic corruption check
+                file.seek(0) # Reset file pointer after verify()
+                img_test = Image.open(file) # Re-open for actual processing
+                img_test.load()
+                file.seek(0)
+            except Exception:
+                flash("The file you uploaded is not a valid image. Please upload a real JPG or PNG.", "error")
+                return render_template("admin_add_record.html")
+
+            # 1. Process Real Forensic Data
             filename = secure_filename(file.filename)
             timestamp = get_indian_time().strftime("%Y%m%d_%H%M%S")
-            filename = f"{timestamp}_{filename}"
+            filename = f"forensic_{timestamp}_{filename}"
             file_path = UPLOAD_DIR / filename
             file.save(str(file_path))
             
-            # Create tiles directory
+            # 2. Create tiles directory
             tile_dirname = f"tiles_{timestamp}"
             tile_path = TILES_DIR / tile_dirname
             tile_path.mkdir(exist_ok=True)
-            
-            # Process image into tiles
             split_image_into_tiles(str(file_path), str(tile_path))
             
-            # Generate honey data
-            honey_dirname = f"honey_{timestamp}"
-            honey_dir = HONEY_DIR / honey_dirname
-            honey_dir.mkdir(parents=True, exist_ok=True)
-            honey_path_abs = generate_honey_image(str(file_path), str(honey_dir))
-            honey_rel_path = f"static/honey_data/{honey_dirname}/honey_decoy.png"
+            # 3. Process Decoy (Honey) Data with Gender-Matched Proxy Face
+            from utils.document_generator import get_random_honey_data, generate_official_document
+            h_data = get_random_honey_data(name)
+            target_gender = h_data.get("target_gender", "Male").lower()
+            
+            # Correctly pick from the subfolder matching the generated gender
+            gender_folder = HONEY_POOL / target_gender
+            pool_files = []
+            if gender_folder.exists():
+                pool_files = [f for f in os.listdir(gender_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            
+            import random
+            if pool_files:
+                random_proxy = str(gender_folder / random.choice(pool_files))
+            else:
+                # Fallback to main pool if subfolder is empty
+                main_pool = [f for f in os.listdir(HONEY_POOL) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                random_proxy = str(HONEY_POOL / random.choice(main_pool)) if main_pool else str(file_path)
+            
+            honey_filename = f"decoy_{timestamp}.png"
+            honey_path_abs = HONEY_DIR / honey_filename
+            
+            # Generate the decoy document using the gender-matched face
+            generate_official_document(h_data, random_proxy, str(honey_path_abs))
             
             # Save to database
             conn = get_conn()
             cur = conn.cursor()
             cur.execute(
-                "INSERT INTO criminals(name, mobile, crime_type, photo_path, tile_dir, honey_path, created_at) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO criminals(name, mobile, crime_type, photo_path, tile_dir, honey_path, honey_name, honey_crime_type, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
                 (
                     name,
                     mobile,
                     crime_type,
-                    f"static/uploads/{filename}",
+                    f"static/records/primary_vault/{filename}",
                     f"static/tiles/{tile_dirname}",
-                    honey_rel_path,
+                    f"static/records/decoy_vault/{honey_filename}",
+                    h_data["name"],
+                    h_data["crime_type"],
                     get_indian_time().isoformat(),
                 ),
             )
@@ -763,13 +901,160 @@ def admin_add_record_page():
             
             log_event(f"admin:{session.get('admin')}", "add_criminal", f"Added {name} with verification key sent to {mobile}")
             flash(f"Criminal record for {name} added successfully! Verification key sent to verifier at {mobile} via email.", "success")
-            return redirect(url_for("admin_dashboard"))
+            return redirect(url_for("admin_records"))
             
         except Exception as e:
             flash(f"Error processing record: {str(e)}", "error")
             return render_template("admin_add_record.html")
     
     return render_template("admin_add_record.html")
+
+
+@app.route("/admin/records/advanced", methods=["GET", "POST"])
+def admin_add_record_advanced():
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+    
+    if request.method == "POST":
+        # Get all 12 fields
+        form_data = {
+            "name": request.form.get("name"),
+            "age_gender": request.form.get("age_gender"),
+            "address": request.form.get("address"),
+            "ps1": request.form.get("ps1"),
+            "fir1": request.form.get("fir1"),
+            "ps2": request.form.get("ps2"),
+            "fir2": request.form.get("fir2"),
+            "ps3": request.form.get("ps3"),
+            "arrest_date": request.form.get("arrest_date"),
+            "case1": request.form.get("case1"),
+            "ps4_section": request.form.get("ps4_section"),
+            "case2": request.form.get("case2"),
+            "id_marks": request.form.get("id_marks")
+        }
+        
+        # Validate all fields
+        if any(not v for v in form_data.values()):
+            flash("All 12 forensic fields are required for advanced entry.", "error")
+            return render_template("admin_add_record_advanced.html")
+        crime_type = request.form.get("crime_type") or "Official Record"
+        mobile = request.form.get("mobile") # Verifier Email
+        file = request.files.get("file") # Mugshot
+        
+        if not file or not allowed_file(file.filename):
+            flash("Invalid file format. Please upload a real JPG or PNG image.", "error")
+            return render_template("admin_add_record_advanced.html")
+            
+        try:
+            # Verify if it's a real image content
+            from PIL import Image
+            try:
+                img_test = Image.open(file)
+                img_test.verify() # Basic corruption check
+                file.seek(0) # Reset file pointer
+                img_test = Image.open(file)
+                img_test.load()
+                file.seek(0)
+            except Exception:
+                flash("The file you uploaded is not a valid image content. Please upload a real JPG or PNG photo.", "error")
+                return render_template("admin_add_record_advanced.html")
+
+            # 1. Process Real Forensic Mugshot & Document (PRIMARY VAULT)
+            filename = secure_filename(file.filename)
+            timestamp = get_indian_time().strftime("%Y%m%d_%H%M%S")
+            mugshot_filename = f"forensic_face_{timestamp}_{filename}"
+            mugshot_path = UPLOAD_DIR / mugshot_filename
+            file.save(str(mugshot_path))
+            
+            doc_filename = f"forensic_doc_{timestamp}.png"
+            doc_path = UPLOAD_DIR / doc_filename
+            generate_official_document(form_data, str(mugshot_path), str(doc_path))
+            
+            # 2. Process Decoy (Honey) Document & Gender-Matched Proxy (DECOY VAULT)
+            import random
+            honey_data = get_random_honey_data(form_data["name"])
+            target_gender = honey_data.get("target_gender", "Male").lower()
+            
+            # Pick a face matching the generated gender
+            gender_folder = HONEY_POOL / target_gender
+            pool_files = []
+            if gender_folder.exists():
+                pool_files = [f for f in os.listdir(gender_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            
+            if pool_files:
+                random_proxy = str(gender_folder / random.choice(pool_files))
+            else:
+                main_pool = [f for f in os.listdir(HONEY_POOL) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                random_proxy = str(HONEY_POOL / random.choice(main_pool)) if main_pool else str(mugshot_path)
+            
+            honey_doc_filename = f"decoy_doc_{timestamp}.png"
+            honey_doc_path = HONEY_DIR / honey_doc_filename
+            
+            # Generate honey doc using the GENDER-MATCHED PROXY face
+            generate_official_document(honey_data, random_proxy, str(honey_doc_path))
+            
+            # 3. Tiling (Split Original Doc)
+            tile_dirname = f"tiles_{timestamp}"
+            tile_path = TILES_DIR / tile_dirname
+            tile_path.mkdir(exist_ok=True)
+            split_image_into_tiles(str(doc_path), str(tile_path))
+            
+            # 4. Save to Database with isolated vault paths
+            conn = get_conn()
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO criminals(
+                    name, mobile, crime_type, photo_path, tile_dir, honey_path, 
+                    age_gender, address, ps1, fir1, ps2, fir2, ps3, 
+                    arrest_date, case1, ps4_section, case2, id_marks, 
+                    honey_name, honey_crime_type, created_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    form_data["name"],
+                    mobile,
+                    crime_type,
+                    f"static/records/primary_vault/{doc_filename}",
+                    f"static/tiles/{tile_dirname}",
+                    f"static/records/decoy_vault/{honey_doc_filename}", 
+                    form_data["age_gender"],
+                    form_data["address"],
+                    form_data["ps1"],
+                    form_data["fir1"],
+                    form_data["ps2"],
+                    form_data["fir2"],
+                    form_data["ps3"],
+                    form_data["arrest_date"],
+                    form_data["case1"],
+                    form_data["ps4_section"],
+                    form_data["case2"],
+                    form_data["id_marks"],
+                    honey_data["name"],
+                    honey_data["crime_type"],
+                    get_indian_time().isoformat(),
+                ),
+            )
+            record_id = cur.lastrowid
+            
+            # Access Key
+            secret_key = str(uuid.uuid4())
+            cur.execute(
+                "INSERT INTO keys(record_id, secret_key, valid, created_at) VALUES (?,?,?,?)",
+                (record_id, secret_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
+            )
+            conn.commit()
+            conn.close()
+            
+            # Send Email
+            send_email_key(mobile, form_data["name"], secret_key)
+            
+            flash(f"Official Records (Real & Honey) generated and secured for {form_data['name']}.", "success")
+            return redirect(url_for("admin_records"))
+            
+        except Exception as e:
+            flash(f"Error: {e}", "error")
+            return render_template("admin_add_record_advanced.html")
+            
+    return render_template("admin_add_record_advanced.html")
 
 
 @app.route("/admin/records/edit/<int:record_id>", methods=["GET", "POST"])
@@ -810,6 +1095,57 @@ def admin_edit_record(record_id):
         return redirect(url_for("admin_records"))
         
     return render_template("admin_edit_record.html", record=record)
+@app.route("/admin/records/<int:record_id>/delete", methods=["POST"])
+def admin_delete_record(record_id):
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        
+        # 1. Fetch info for file cleanup
+        cur.execute("SELECT name, photo_path, tile_dir, honey_path FROM criminals WHERE id = ?", (record_id,))
+        record = cur.fetchone()
+        
+        if not record:
+            conn.close()
+            flash("Record not found", "error")
+            return redirect(url_for("admin_records"))
+
+        # 2. Delete forensic files from hardware storage
+        import shutil
+        paths_to_delete = []
+        if record["photo_path"]: paths_to_delete.append(BASE_DIR / record["photo_path"])
+        if record["honey_path"]: paths_to_delete.append(BASE_DIR / record["honey_path"])
+        
+        # Delete individual files
+        for p in paths_to_delete:
+            if p.exists() and p.is_file():
+                try: os.remove(str(p))
+                except: pass
+        
+        # Delete tile directory
+        if record["tile_dir"]:
+            t_dir = BASE_DIR / record["tile_dir"]
+            if t_dir.exists() and t_dir.is_dir():
+                try: shutil.rmtree(str(t_dir))
+                except: pass
+
+        # 3. Delete from database (Criminal + Keys)
+        cur.execute("DELETE FROM criminals WHERE id = ?", (record_id,))
+        cur.execute("DELETE FROM keys WHERE record_id = ?", (record_id,))
+        
+        conn.commit()
+        conn.close()
+
+        log_event(f"admin:{session.get('admin')}", "delete_criminal", f"Permanently removed record ID {record_id} ({record['name']})")
+        flash(f"Record for {record['name']} and all associated forensic data have been permanently deleted.", "success")
+        
+    except Exception as e:
+        flash(f"Error during deletion: {str(e)}", "error")
+
+    return redirect(url_for("admin_records"))
 
 
 # -------------------------------------------------
@@ -853,47 +1189,32 @@ def verifier_retrieve():
                 record_id=key_data["record_id"],
                 name=key_data["name"],
                 crime_type=key_data["crime_type"],
+                photo_path=to_static_filename(key_data["photo_path"]),
                 download_url=url_for("download_record", record_id=key_data["record_id"]),
                 get_indian_time=get_indian_time
             )
         else:
-            # Invalid/wrong key - return honey/decoy data from honey_data folder
-            import os
-            honey_files = []
-            honey_path = BASE_DIR / "static" / "honey_data"
-            if honey_path.exists():
-                honey_files = [f for f in os.listdir(honey_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            # Invalid/wrong key - return honey/decoy data
+            # First, check if we can serve a professional Honey Document from our database
+            cur.execute("SELECT id, honey_name, honey_crime_type, honey_path FROM criminals WHERE honey_name IS NOT NULL ORDER BY RANDOM() LIMIT 1")
+            decoy_record = cur.fetchone()
             
-            if honey_files:
-                import random
-                selected_file = random.choice(honey_files)
-                log_event(f"verifier:{session.get('verifier')}", "honey_triggered", f"Invalid key used, served honey data")
-                
+            if decoy_record:
+                log_event(f"verifier:{session.get('verifier')}", "protection_triggered", f"Invalid key used, served secure protection data")
                 return render_template(
                     "verifier_result.html",
-                    record_id=f"H{random.randint(100, 999)}",
-                    name=f"John Doe",
-                    crime_type=f"Sample Case",
-                    download_url=url_for("download_honey_file", filename=selected_file),
+                    record_id=f"H{decoy_record['id']}",
+                    name=decoy_record["honey_name"] or "Vikram Rathore",
+                    crime_type=decoy_record["honey_crime_type"] or "Official Record",
+                    photo_path=to_static_filename(decoy_record["honey_path"]),
+                    download_url=url_for("download_honey", record_id=decoy_record["id"]),
                     get_indian_time=get_indian_time
                 )
-            else:
-                # Fallback to random criminal record
-                cur.execute("SELECT * FROM criminals ORDER BY RANDOM() LIMIT 1")
-                decoy_record = cur.fetchone()
-                
-                if decoy_record:
-                    return render_template(
-                        "verifier_result.html",
-                        record_id=f"S{decoy_record['id']}",
-                        name=decoy_record["name"],
-                        crime_type=decoy_record["crime_type"],
-                        download_url=url_for("download_honey", record_id=decoy_record["id"]),
-                        get_indian_time=get_indian_time
-                    )
+            
+            # Legacy fallback
+            return render_template("verifier_view.html", error="No secure data found for this key")
         
         conn.close()
-        return render_template("verifier_view.html", error="No data available")
         
     except Exception as e:
         return render_template("verifier_view.html", error=f"Error processing key: {str(e)}")
@@ -907,20 +1228,20 @@ def download_honey(record_id):
     try:
         conn = get_conn()
         cur = conn.cursor()
-        cur.execute("SELECT photo_path FROM criminals WHERE id = ?", (record_id,))
+        cur.execute("SELECT honey_path FROM criminals WHERE id = ?", (record_id,))
         record = cur.fetchone()
         conn.close()
         
-        if record:
-            photo_path = BASE_DIR / record["photo_path"].replace("static/", "static/")
+        if record and record["honey_path"]:
+            photo_path = BASE_DIR / record["honey_path"].replace("static/", "static/")
             if photo_path.exists():
-                return send_file(str(photo_path), as_attachment=True, download_name=f"sample_data_{record_id}.jpg")
+                return send_file(str(photo_path), as_attachment=True, download_name=f"official_record_H{record_id}.png")
         
-        flash("Sample file not found", "error")
+        flash("Secure file not found", "error")
         return redirect(url_for("verifier_view"))
             
     except Exception as e:
-        flash(f"Error downloading sample file: {str(e)}", "error")
+        flash(f"Error downloading secure file: {str(e)}", "error")
         return redirect(url_for("verifier_view"))
 
 
@@ -976,4 +1297,4 @@ def download_honey_file(filename):
 
 
 if __name__ == "__main__":
-    app.run(debug=True,use_reloader=False)
+    app.run(debug=True)

@@ -1,0 +1,94 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Security Insights | Security Hub{% endblock %}
+{% block page_title %}System Protection Analytics{% endblock %}
+
+{% block content %}
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+    <div class="card animate-in">
+        <p
+            style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 0.5rem;">
+            TOTAL SYSTEM ACCESS</p>
+        <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+            <h3 style="font-size: 2.5rem; color: #fff;">{{ total_logs }}</h3>
+            <span style="font-size: 0.75rem; color: var(--success-primary); font-weight: 700;">↑ 100% Uptime</span>
+        </div>
+    </div>
+
+    <div class="card animate-in" style="border-left: 4px solid var(--danger-primary);">
+        <p
+            style="font-size: 0.7rem; color: var(--danger-primary); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 0.5rem;">
+            INTRUSION BLOCKS</p>
+        <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+            <h3 style="font-size: 2.5rem; color: var(--danger-primary);">{{ honey_triggers }}</h3>
+            <span style="font-size: 0.75rem; color: var(--danger-primary); font-weight: 700;">ACCESS
+                BLOCKED</span>
+        </div>
+    </div>
+
+    <div class="card animate-in">
+        <p
+            style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 0.5rem;">
+            DEFENSE EFFICIENCY</p>
+        <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+            <h3 style="font-size: 2.5rem; color: var(--accent-primary);">{{ rate }}%</h3>
+            <span style="font-size: 0.75rem; color: var(--accent-primary); font-weight: 700;">ACCURACY</span>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+    <section class="card">
+        <h4 class="card-title"
+            style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem;">TOP
+            SECURITY RISK IPS (TOP)</h4>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% for ip, count in intruder_ips %}
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <div>
+                    <code
+                        style="color: var(--danger-primary); font-weight: 700; font-family: 'JetBrains Mono';">{{ ip }}</code>
+                    <p style="font-size: 0.6rem; color: var(--text-muted); margin-top: 2px;">REPEATED ACCESS DENIED
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <span style="display: block; font-size: 1rem; font-weight: 800; color: #fff;">{{ count }}</span>
+                    <span style="font-size: 0.6rem; color: var(--text-muted);">ATTEMPTS</span>
+                </div>
+            </div>
+            {% else %}
+            <p style="text-align: center; color: var(--text-muted); padding: 2rem;">No high-risk vectors detected.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="card">
+        <h4 class="card-title"
+            style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem;">LIVE
+            PROTECTION LOG</h4>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time (UTC)</th>
+                        <th>Intruder IP</th>
+                        <th>Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_honey %}
+                    <tr>
+                        <td style="font-family: 'JetBrains Mono'; font-size: 0.8rem;">{{ log.timestamp.split('T')[1][:8]
+                            }}</td>
+                        <td style="font-family: 'JetBrains Mono'; color: var(--danger-primary); font-weight: 700;">{{
+                            log.ip }}</td>
+                        <td><span class="badge badge-danger">SECURE_BLOCK_ACTIVE</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

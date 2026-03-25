@@ -1,0 +1,188 @@
+{% extends 'admin_layout.html' %}
+{% block title %}Secure Entry | Security Hub{% endblock %}
+{% block page_title %}Secure Record Administration{% endblock %}
+
+{% block content %}
+<div class="split-layout">
+
+    <!-- Form Column -->
+    <section class="card animate-in">
+        <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.25rem; color: #fff; margin-bottom: 0.5rem;">IDENTITY MANAGEMENT TERMINAL</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Execute precise record creation for secure
+                custodial management.</p>
+        </div>
+
+        <form action="{{ url_for('admin_add_record_advanced') }}" method="post" enctype="multipart/form-data">
+
+            <div class="section-label">01. IDENTITY ATTRIBUTES</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>FULL LEGAL NAME</label>
+                    <input type="text" name="name" placeholder="Amir Patel" required
+                        oninput="upd('prev-name', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>AGE / GENDER</label>
+                    <input type="text" name="age_gender" placeholder="40 / M" required
+                        oninput="upd('prev-age', this.value)">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>RESIDENTIAL ADDRESS</label>
+                <textarea name="address"
+                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff;"
+                    required oninput="upd('prev-addr', this.value)"></textarea>
+            </div>
+            <div class="form-group">
+                <label>IDENTIFICATION MARKS</label>
+                <input type="text" name="id_marks" placeholder="Scar on forehead, Tattoo on right arm" required
+                    oninput="upd('prev-id-marks', this.value)">
+            </div>
+
+            <div class="section-label">02. CRIMINAL RECORD DETAILS</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>PRIMARY P.S.</label>
+                    <input type="text" name="ps1" placeholder="Station Alpha" required
+                        oninput="upd('prev-ps1', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>PRIMARY FIR NO.</label>
+                    <input type="text" name="fir1" placeholder="FIR/101/2024" required
+                        oninput="upd('prev-fir1', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>SECONDARY P.S.</label>
+                    <input type="text" name="ps2" placeholder="Station Beta" required
+                        oninput="upd('prev-ps2', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>SECONDARY FIR NO.</label>
+                    <input type="text" name="fir2" placeholder="FIR/303/2024" required
+                        oninput="upd('prev-fir2', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>ARREST DATE</label>
+                    <input type="text" name="arrest_date" placeholder="DD/MM/YYYY" required
+                        oninput="upd('prev-date', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>CRIME CLASSIFICATION</label>
+                    <input type="text" name="crime_type" placeholder="e.g. CYBER THEFT" required>
+                </div>
+                <div class="form-group">
+                    <label>ARCHIVE P.S.</label>
+                    <input type="text" name="ps3" placeholder="Archive Station" required
+                        oninput="upd('prev-ps3', this.value)">
+                </div>
+            </div>
+
+            <div class="section-label">03. LEGAL PROCEEDINGS</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>CASE NO. 01</label>
+                    <input type="text" name="case1" placeholder="CR/5901/24" required
+                        oninput="upd('prev-case1', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>IPC SECTIONS</label>
+                    <input type="text" name="ps4_section" placeholder="420, 66 IT ACT" required
+                        oninput="upd('prev-ps4', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>CASE NO. 02</label>
+                    <input type="text" name="case2" placeholder="ND_CASE_REF_99" required
+                        oninput="upd('prev-case2', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>VERIFIER ACCESS EMAIL</label>
+                    <input type="email" name="mobile" placeholder="agent@forensic.gov" required>
+                </div>
+                <div class="form-group">
+                    <label>BIOMETRIC PHOTO</label>
+                    <input type="file" name="file" accept="image/*" required onchange="previewPhoto(this)">
+                </div>
+            </div>
+
+            <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                <button type="submit" class="btn-primary" style="width: 100%; padding: 1.25rem;">
+                    AUTHORIZE GENERATION & SECURE
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Preview Column -->
+    <aside class="live-preview-container">
+        <div style="margin-bottom: 1.5rem;">
+            <h4 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">RECORD VALIDATION
+                PREVIEW
+            </h4>
+        </div>
+
+        <div class="forensic-doc" id="doc-element">
+            <div class="doc-header">
+                <h2 style="font-size: 1.25rem; font-weight: 900; letter-spacing: 4px;">OFFICIAL REPORT</h2>
+                <p style="font-size: 0.6rem; margin-top: 4px;">CENTRAL RECORDING AUTHORITY</p>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <div style="flex: 1;">
+                    <div class="doc-row"><span>NAME</span><span id="prev-name">---</span></div>
+                    <div class="doc-row"><span>AGE/SEX</span><span id="prev-age">---</span></div>
+                    <div class="doc-row"><span>ID MARKS</span><span id="prev-id-marks">---</span></div>
+                    <div class="doc-row"><span>P.S. (1)</span><span id="prev-ps1">---</span></div>
+                    <div class="doc-row"><span>FIR (1)</span><span id="prev-fir1">---</span></div>
+                    <div class="doc-row"><span>P.S. (ARC)</span><span id="prev-ps3">---</span></div>
+                    <div class="doc-row"><span>SECTIONS</span><span id="prev-ps4">---</span></div>
+                    <div class="doc-row"><span>CASE (2)</span><span id="prev-case2">---</span></div>
+                    <div class="doc-row"><span>DATE</span><span id="prev-date">---</span></div>
+                </div>
+                <div id="photo-preview-box"
+                    style="width: 100px; height: 120px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; text-align: center;">
+                    PHOTO<br>REQUIRED
+                </div>
+            </div>
+
+            <div style="margin-top: 1rem;">
+                <div class="doc-row" style="border-bottom: none;"><span>ADDRESS:</span></div>
+                <p id="prev-addr"
+                    style="font-size: 0.75rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; line-height: 1.2;">
+                    ---</p>
+            </div>
+
+            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed #ccc; padding-top: 0.5rem;">
+                <p style="font-size: 0.5rem; color: #666;">ENCRYPTED VIA MULTI-LAYERED SECURITY SYSTEM</p>
+                <p style="font-size: 0.5rem; color: #666; margin-top: 2px;">SECURED THROUGH MULTI-PART DATA STORAGE</p>
+            </div>
+        </div>
+
+        <div
+            style="margin-top: 2rem; padding: 1rem; background: rgba(0,242,255,0.05); border-radius: 12px; border: 1px solid rgba(0,242,255,0.1);">
+            <p style="font-size: 0.8rem; color: var(--accent-primary); font-weight: 500;">
+                <strong>NOTE:</strong> This record will be converted to a secure export, encrypted, and stored in
+                protected segments upon authorization.
+            </p>
+        </div>
+    </aside>
+
+</div>
+
+<script>
+    function upd(id, val) {
+        document.getElementById(id).textContent = val || '---';
+    }
+
+    function previewPhoto(input) {
+        const box = document.getElementById('photo-preview-box');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                box.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}

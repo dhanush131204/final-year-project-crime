@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Issue Key - Forensic System{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px;">
+    <h1 class="glow-text" style="margin-bottom: 1rem;">Issue <span>New Key</span></h1>
+    <p style="color: #666; margin-bottom: 3rem;">Generate a secure access key and transmit it to a field verifier.</p>
+
+    <div class="auth-card" style="max-width: 100%; background: rgba(255,255,255,0.02); padding: 3rem;">
+        <form method="POST" action="{{ url_for('admin_keys_send') }}">
+            <div style="margin-bottom: 2rem;">
+                <label>Select Criminal Record</label>
+                <select name="record_id" required
+                    style="width: 100%; padding: 1rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px;">
+                    <option value="">-- Choose Record --</option>
+                    {% for record in records %}
+                    <option value="{{ record['id'] }}">{{ record['name'] }} ({{ record['mobile'] }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label>Transmission Method</label>
+                <div style="display: flex; gap: 2rem; margin-top: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; color: #fff; cursor: pointer;">
+                        <input type="radio" name="contact_type" value="email" checked style="width: auto;"> Email
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; color: #fff; cursor: pointer;">
+                        <input type="radio" name="contact_type" value="sms" style="width: auto;"> WhatsApp/SMS
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label>Recipient Address / Phone</label>
+                <input type="text" name="contact" placeholder="email@agency.gov or +91..." required>
+            </div>
+
+            <button type="submit" class="main-btn" style="width: 100%; border: none; cursor: pointer;">Issue and
+                Securely Transmit</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

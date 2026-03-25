@@ -1,43 +1,55 @@
 {% extends 'admin_layout.html' %}
-{% block title %}Send Key | DNA Honey{% endblock %}
-{% block page_title %}Send Access Key{% endblock %}
-{% block content %}
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash">
-        {% for category, message in messages %}
-          <div class="{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+{% block title %}Key Dispatch | Security Hub{% endblock %}
+{% block page_title %}Key Dispatch System{% endblock %}
 
-  <div class="center-form">
-    <div class="form-card">
-      <h2>Send Access Key</h2>
-      <form method="post" action="{{ url_for('admin_keys_send') }}">
-        <label for="record_id">Criminal Record</label>
-        <select id="record_id" name="record_id" required>
-          <option value="">-- Choose Record --</option>
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+  <div class="card" style="border-top: 4px solid var(--accent-primary);">
+    <div style="margin-bottom: 2rem;">
+      <h3 style="font-size: 1.25rem; color: #fff; margin-bottom: 0.5rem;">AUTHORIZE SECURE ACCESS</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Generate a secure access key for a specific custodial
+        record and transmit it to authorized personnel.</p>
+    </div>
+
+    <form method="post" action="{{ url_for('admin_keys_send') }}">
+      <div class="form-group">
+        <label>TARGET CUSTODIAL RECORD</label>
+        <select name="record_id" required
+          style="padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff; border-radius: 8px; width: 100%;">
+          <option value="">-- SELECT IDENTITY --</option>
           {% for r in records %}
-          <option value="{{ r.id }}">#{{ r.id }} - {{ r.name }}</option>
+          <option value="{{ r.id }}">ID: {{ r.id }} | {{ r.name }}</option>
           {% endfor %}
         </select>
-        
-        <label for="contact">Verifier Contact</label>
-        <select id="contact_type" name="contact_type" required>
-          <option value="email">Email Address</option>
-          <option value="sms">Phone Number (SMS)</option>
+      </div>
+
+      <div class="form-group">
+        <label>TRANSMISSION METHOD</label>
+        <select name="contact_type" required
+          style="padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff; border-radius: 8px; width: 100%;">
+          <option value="email">SECURE EMAIL PORTAL</option>
+          <option value="sms">SECURE SMS TRANSMISSION</option>
         </select>
-        
-        <input type="text" id="contact" name="contact" placeholder="Enter email or phone number" required />
-        
-        <button type="submit">Generate & Send Key</button>
-      </form>
-      
-      <p style="text-align: center; margin-top: 20px;">
-        <a href="{{ url_for('admin_keys') }}" style="color: #00d4ff; text-decoration: none;">← Back to Keys</a>
-      </p>
-    </div>
+      </div>
+
+      <div class="form-group">
+        <label>RECIPIENT ENDPOINT</label>
+        <input type="text" name="contact" placeholder="agent@police.gov or +1234567890" required />
+      </div>
+
+      <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+        <button type="submit" class="btn-primary" style="width: 100%;">EXECUTE KEY DISPATCH</button>
+        <a href="{{ url_for('admin_keys') }}" class="btn-ghost"
+          style="width: 100%; display: flex; align-items: center; justify-content: center; margin-top: 1rem;">CANCEL</a>
+      </div>
+    </form>
   </div>
+
+  <div
+    style="margin-top: 2rem; padding: 1rem; border-radius: 12px; background: rgba(0,242,255,0.05); border: 1px solid rgba(0,242,255,0.1);">
+    <p style="font-size: 0.75rem; color: var(--accent-primary); text-align: center; margin: 0;">
+      <strong>ENCRYPTION LEVEL:</strong> Advanced AES-256 Encryption Standard.
+    </p>
+  </div>
+</div>
 {% endblock %}

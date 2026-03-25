@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Verifier Dashboard - DNA Forensic{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h1 class="glow-text" style="font-size: 2.5rem; margin-bottom: 1rem;">Record <span>Verification</span></h1>
+    <p style="color: #888; margin-bottom: 3rem;">Enter the multi-factor secret key received via SMS or Email to retrieve
+        the criminal forensic record.</p>
+
+    <div class="auth-card" style="max-width: 100%; padding: 4rem; background: rgba(255,255,255,0.02);">
+        <form action="{{ url_for('verifier_retrieve') }}" method="POST">
+            <div style="margin-bottom: 2rem;">
+                <label style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--accent);">Secret Access Key
+                    (UUID)</label>
+                <input type="text" name="key" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required
+                    style="font-family: monospace; font-size: 1.2rem; padding: 1.2rem; background: rgba(0,0,0,0.5); letter-spacing: 1px;">
+            </div>
+
+            {% if error %}
+            <p
+                style="color: #ff4d4d; margin-bottom: 2rem; background: rgba(255,77,77,0.1); padding: 1rem; border-radius: 8px;">
+                {{ error }}</p>
+            {% endif %}
+
+            <button type="submit" class="main-btn"
+                style="width: 100%; border: none; cursor: pointer; font-size: 1.1rem; padding: 1.2rem;">
+                Decrypt & Retrieve Record
+            </button>
+        </form>
+    </div>
+
+    <div style="margin-top: 4rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">
+        <h3 style="font-size: 0.9rem; color: #444; margin-bottom: 1rem;">SECURITY PROTOCOL</h3>
+        <p style="font-size: 0.85rem; color: #666; line-height: 1.6;">
+            All retrieval attempts are logged with IP and timestamp. Incorrect keys may trigger the <strong>Honey
+                Encryption</strong> decoy mechanism, serving plausible but synthetic data to ensure system integrity.
+        </p>
+    </div>
+</div>
+{% endblock %}

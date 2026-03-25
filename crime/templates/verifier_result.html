@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Retrieval Result - Forensic System{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+        <div>
+            <span class="badge badge-success" style="margin-bottom: 1rem;">SECURE ACCESS GRANTED</span>
+            <h1 class="glow-text" style="font-size: 2.5rem;">Forensic <span>Record</span></h1>
+        </div>
+        <p style="color: #666; font-size: 0.9rem;">Retrieved on: {{ get_indian_time().strftime('%Y-%m-%d %H:%M:%S') }}
+            IST</p>
+    </div>
+
+    <div class="stat-card"
+        style="padding: 3rem; background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%);">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 3rem;">
+            <div style="text-align: center;">
+                <div
+                    style="width: 200px; height: 200px; border: 2px solid var(--accent); border-radius: 15px; margin: 0 auto 1.5rem; overflow: hidden; background: #000;">
+                    <img src="{{ url_for('static', filename='images/user_placeholder.png') }}"
+                        style="width: 100%; height: 100%; object-fit: cover; opacity: 0.5;">
+                </div>
+                <p style="font-size: 0.7rem; color: #444; text-transform: uppercase;">Identity Verified</p>
+            </div>
+
+            <div>
+                <div style="margin-bottom: 2rem;">
+                    <label
+                        style="color: #555; text-transform: uppercase; font-size: 0.75rem; display: block; margin-bottom: 0.5rem;">Case
+                        Reference ID</label>
+                    <p style="font-size: 1.5rem; font-weight: 700; font-family: monospace;">#{{ record_id }}</p>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label
+                        style="color: #555; text-transform: uppercase; font-size: 0.75rem; display: block; margin-bottom: 0.5rem;">Subject
+                        Name</label>
+                    <p style="font-size: 2rem; font-weight: 800; color: #fff;">{{ name }}</p>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label
+                        style="color: #555; text-transform: uppercase; font-size: 0.75rem; display: block; margin-bottom: 0.5rem;">Primary
+                        Offense</label>
+                    <p style="font-size: 1.2rem; color: var(--accent);">{{ crime_type }}</p>
+                </div>
+
+                <a href="{{ download_url }}" class="main-btn" style="display: inline-block; margin-top: 1rem;">
+                    Download Full Evidence File (.jpg)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="{{ url_for('verifier_view') }}" style="color: #888; text-decoration: none; font-size: 0.9rem;">&larr;
+            Return to Secure Portal</a>
+    </div>
+</div>
+{% endblock %}

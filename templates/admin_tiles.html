@@ -1,34 +1,59 @@
 {% extends 'admin_layout.html' %}
-{% block title %}Tiles | DNA Honey{% endblock %}
-{% block page_title %}Tile Browser{% endblock %}
+{% block title %}Data Segments | Security Hub{% endblock %}
+{% block page_title %}Secure Data Segments{% endblock %}
+
 {% block content %}
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash">
-        {% for category, message in messages %}
-          <div class="{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-
-  <div class="card">
-    <div class="header-row">
-      <h3>Tiles for {{ record.name }} (ID: {{ record.id }})</h3>
-      <a class="btn small" href="{{ url_for('admin_records') }}">Back to Records</a>
+<div class="card animate-in">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+    <div>
+      <h3 style="font-size: 1.25rem; color: #fff; margin-bottom: 0.25rem;">DATA SEGMENT BROWSER</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Source Subject: <strong
+          style="color: var(--accent-primary);">{{ record.name }}</strong> (ID: {{ record.id }})</p>
     </div>
-
-    {% if tile_urls %}
-      <div class="tiles-grid">
-        {% for tile_url in tile_urls %}
-          <a href="{{ tile_url }}" target="_blank" class="tile-card">
-            <img src="{{ tile_url }}" alt="Tile {{ loop.index }}">
-            <div class="tile-meta">Tile {{ loop.index }}</div>
-          </a>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p>No tile images found for this record.</p>
-    {% endif %}
+    <a href="{{ url_for('admin_records') }}" class="btn-outline"
+      style="padding: 0.6rem 1.2rem; font-size: 0.8rem;">RETURN TO RECORDS</a>
   </div>
+
+  {% if tile_urls %}
+  <div
+    style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--glass-border);">
+    <p
+      style="font-size: 0.75rem; color: var(--accent-primary); margin-bottom: 1.5rem; letter-spacing: 1px; font-weight: 600;">
+      [ SECURE DATA SEGMENTS DETECTED ]
+    </p>
+
+    <div class="tiles-grid">
+      {% for tile_url in tile_urls %}
+      <a href="{{ tile_url }}" target="_blank" class="tile-card">
+        <img src="{{ tile_url }}" alt="Tile {{ loop.index }}">
+        <div class="tile-meta">TILE_{{ "%03d"|format(loop.index) }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 4rem 2rem; border: 1px dashed var(--glass-border); border-radius: 20px;">
+    <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.2;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path
+          d="M11.767 19.089c4.924.868 6.14-6.025 1.216-6.894m-1.216 6.894L5.86 18.047m5.908 1.042V22.5m-5.907-4.453c-4.924-.869-6.141 6.025-1.217 6.894m1.217-6.894l5.907 1.042M4.643 14.733c-.868-4.924 6.025-6.14 6.894-1.216m-6.894 1.216l1.042 5.908m-1.042-5.908H1.5M4.643 14.733l1.217 6.894m6.893-12.8c.869 4.924-6.025 6.141-6.894 1.217m6.894-1.217l-1.042-5.907m1.042 5.907H14.12m-6.334 1.042l1.042 5.907m8.026 8.026c4.924.868 6.14-6.025 1.216-6.894m-1.216 6.894l-5.908-1.042m5.908 1.042V22.5m-5.908-4.453c-4.924-.869-6.141 6.025-1.217 6.894m1.217-6.894l5.908 1.042m-1.267-1.267c-.868-4.924 6.025-6.14 6.894-1.216m-6.894 1.216l1.042 5.908m-1.042-5.908h3.143m-3.143 1.216l1.217 6.894m6.894-12.8c.868 4.924-6.025 6.14-6.894 1.216m6.894-1.216l-1.042-5.908m1.042 5.908h3.143m-7.277 1.042l1.042 5.908">
+        </path>
+      </svg>
+    </div>
+    <p style="color: var(--text-muted);">No data segments found for this identity.</p>
+  </div>
+  {% endif %}
+
+  <div
+    style="margin-top: 2rem; padding: 1rem; background: rgba(0,242,255,0.05); border-radius: 12px; border: 1px solid rgba(0,242,255,0.1);">
+    <p style="font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
+      <strong style="color: var(--accent-primary);">DATA INTEGRITY VERIFIED:</strong> These segments represent the
+      secure
+      encryption of the record. Access requires a valid security key and authorized
+      protocols.
+    </p>
+  </div>
+</div>
 {% endblock %}

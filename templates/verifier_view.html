@@ -1,49 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verifier | DNA Honey</title>
+  <title>Identity Hub | Crime Secure</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
-<body class="bg">
-  <div class="overlay"></div>
-  <nav class="navbar">
-    <div class="nav-container">
-      <div class="nav-brand">
-        <h2>Verifier Panel</h2>
-      </div>
-      <div class="nav-menu">
-        {% if session.get('verifier') %}
-          <span class="badge">{{ session['verifier'] }}</span>
-          <a href="{{ url_for('logout') }}" class="nav-link">
-            <span>Logout</span>
-          </a>
-        {% endif %}
-      </div>
+
+<body>
+  <nav class="glass-nav">
+    <div class="nav-logo">CRIME SECURE</div>
+    <div class="nav-links">
+      <span style="color: var(--accent-primary); font-size: 0.8rem; font-weight: 700;">AGENT: {{ session.get('verifier')
+        }}</span>
+      <a href="{{ url_for('logout') }}" style="color: var(--danger-primary);">LOGOUT terminal</a>
     </div>
   </nav>
 
-  <div class="center-content">
-    <div class="form-card">
-      {% if error %}
-        <div class="flash"><div class="error">{{ error }}</div></div>
-      {% endif %}
-      {% if info %}
-        <div class="flash"><div class="info">{{ info }}</div></div>
-      {% endif %}
+  <main class="hero-wrapper">
+    <div class="glass-panel auth-card" style="max-width: 550px;">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 class="title-cyan">ACCESS TERMINAL</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Input the unique access key to view records.</p>
+      </div>
 
-      <h3>Enter Decryption Key</h3>
+      <div class="alert-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+          {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+      </div>
+
       <form method="post" action="{{ url_for('verifier_retrieve') }}">
-        <label>Secret Key</label>
-        <input type="text" name="key" placeholder="Enter access key here" required />
-        <button type="submit">Retrieve Record</button>
+        <div class="input-group">
+          <label class="input-label">Authorization Key (Security Key)</label>
+          <input type="text" name="key" class="styled-input" placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+            required />
+        </div>
+
+        <button type="submit" class="btn-premium">ACCESS RECORDS</button>
       </form>
 
-      <p style="text-align: center; margin-top: 20px;">
-        <a href="{{ url_for('index') }}" style="color: #00d4ff; text-decoration: none;">← Back to Home</a>
-      </p>
+      <div
+        style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--glass-border);">
+        <p style="font-size: 0.7rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+          <strong style="color: var(--warning-primary);">SECURITY ADVISORY:</strong>
+          Incorrect keys will trigger security alerts. All unauthorized access attempts are logged with IP &
+          Geolocation traces.
+        </p>
+      </div>
     </div>
-  </div>
+  </main>
 </body>
+
 </html>

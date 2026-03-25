@@ -1,0 +1,142 @@
+:root {
+  --bg-dark: #0a0b10;
+  --accent: #00d2ff;
+  --accent-glow: rgba(0, 210, 255, 0.4);
+  --text-main: #e0e0e0;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body.luxury-dark {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+}
+
+.glass-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 5%;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.logo span {
+  color: var(--accent);
+}
+
+.hero-section {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: radial-gradient(circle at 10% 20%, rgba(0, 210, 255, 0.1) 0%, transparent 40%);
+}
+
+.hero-content h1 {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.hero-content h1 span {
+  display: block;
+  background: linear-gradient(90deg, #fff, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glow-text {
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
+.hero-actions {
+  margin-top: 3rem;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.main-btn {
+  padding: 1rem 2.5rem;
+  background: var(--accent);
+  color: #000;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: 0.3s;
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.main-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px var(--accent-glow);
+}
+
+.secondary-btn {
+  padding: 1rem 2.5rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.secondary-btn:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+.auth-card {
+  background: var(--glass-bg);
+  padding: 3rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  width: 100%;
+  max-width: 450px;
+}
+
+form div {
+  margin-bottom: 1.5rem;
+}
+
+input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 8px;
+}
+
+input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #999;
+}

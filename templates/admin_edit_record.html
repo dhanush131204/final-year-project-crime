@@ -1,35 +1,47 @@
 {% extends 'admin_layout.html' %}
-{% block title %}Edit Record | DNA Honey{% endblock %}
-{% block page_title %}Edit Record{% endblock %}
-{% block content %}
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash">
-        {% for category, message in messages %}
-          <div class="{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+{% block title %}Modify Entry | Security Hub{% endblock %}
+{% block page_title %}Record Modification{% endblock %}
 
-  <div class="center-form">
-    <div class="form-card">
-      <h2>Edit Criminal Record #{{ record.id }}</h2>
-      <form action="{{ url_for('admin_edit_record', record_id=record.id) }}" method="post">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" value="{{ record.name }}" required />
-        
-        <label for="mobile">Verifier Email Address</label>
-        <input type="email" id="mobile" name="mobile" value="{{ record.mobile }}" required />
-        
-        <label for="crime_type">Crime Type</label>
-        <input type="text" id="crime_type" name="crime_type" value="{{ record.crime_type }}" required />
-        
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
-            <button type="submit" style="flex: 1;">Update Record</button>
-            <a href="{{ url_for('admin_records') }}" class="btn" style="flex: 1; text-align: center; background: #444; color: white; display: flex; align-items: center; justify-content: center; text-decoration: none; border-radius: 4px; font-weight: 500;">Cancel</a>
-        </div>
-      </form>
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+  <div class="card" style="border-top: 4px solid var(--accent-secondary);">
+    <div style="margin-bottom: 2rem;">
+      <h3 style="font-size: 1.25rem; color: #fff; margin-bottom: 0.5rem;">UPDATE RECORD DATA</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Modify existing identity parameters. Updates will be
+        logged.</p>
     </div>
+
+    <form action="{{ url_for('admin_edit_record', record_id=record.id) }}" method="post">
+      <div class="form-group">
+        <label>FULL LEGAL NAME</label>
+        <input type="text" name="name" value="{{ record.name }}" required />
+      </div>
+
+      <div class="form-group">
+        <label>VERIFIER EMAIL ADDRESS</label>
+        <input type="email" name="mobile" value="{{ record.mobile }}" required />
+      </div>
+
+      <div class="form-group">
+        <label>CRIME CLASSIFICATION</label>
+        <input type="text" name="crime_type" value="{{ record.crime_type }}" required />
+      </div>
+
+      <div
+        style="margin-top: 2rem; display: flex; gap: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+        <button type="submit" class="btn-premium" style="flex: 2;">SAVE MODIFICATIONS</button>
+        <a href="{{ url_for('admin_records') }}" class="btn-ghost"
+          style="flex: 1; display: flex; align-items: center; justify-content: center;">CANCEL</a>
+      </div>
+    </form>
   </div>
+
+  <div
+    style="margin-top: 2rem; padding: 1rem; background: rgba(244, 63, 94, 0.05); border-radius: 12px; border: 1px solid rgba(244, 63, 94, 0.1);">
+    <p style="font-size: 0.75rem; color: var(--danger-primary); margin: 0; text-align: center;">
+      <strong>NOTICE:</strong> Editing a record does not reset the security hash but may affect verifier access if the
+      email is changed.
+    </p>
+  </div>
+</div>
 {% endblock %}

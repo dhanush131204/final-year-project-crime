@@ -1,36 +1,56 @@
 {% extends 'admin_layout.html' %}
-{% block title %}Add Criminal | DNA Honey{% endblock %}
-{% block page_title %}Add Criminal{% endblock %}
-{% block content %}
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash">
-        {% for category, message in messages %}
-          <div class="{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+{% block title %}New Entry | Security Hub{% endblock %}
+{% block page_title %}Security Data Entry{% endblock %}
 
-  <div class="center-form">
-    <div class="form-card">
-      <h2>Add New Criminal Record</h2>
-      <form action="{{ url_for('admin_add_record_page') }}" method="post" enctype="multipart/form-data">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" placeholder="Enter full name" required />
-        
-        <label for="mobile">Verifier Email Address</label>
-        <input type="email" id="mobile" name="mobile" placeholder="Enter verifier's email address" required />
-        
-        <label for="crime_type">Crime Type</label>
-        <input type="text" id="crime_type" name="crime_type" placeholder="e.g., Burglary, Theft, Assault" required />
-        
-        <label for="file">Upload Photo/Fingerprint</label>
-        <input type="file" id="file" name="file" accept="image/*" required />
-        <small style="color: #a0a0a0; font-size: 0.85rem; margin-top: -15px; display: block;">Supported formats: PNG, JPG, JPEG</small>
-        
-        <button type="submit">Upload & Process Record</button>
-      </form>
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+  <div class="card" style="border-top: 4px solid var(--accent-primary);">
+    <div style="margin-bottom: 2rem;">
+      <h3 style="font-size: 1.25rem; color: #fff; margin-bottom: 0.5rem;">SECURE DATA ENTRY</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Input record details for secure encryption and
+        storage.</p>
     </div>
+
+    <form action="{{ url_for('admin_add_record_page') }}" method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>FULL LEGAL NAME</label>
+        <input type="text" name="name" placeholder="Enter identity name" required />
+      </div>
+
+      <div class="form-group">
+        <label>VERIFIER EMAIL ADDRESS</label>
+        <input type="email" name="mobile" placeholder="agent@police.gov" required />
+      </div>
+
+      <div class="form-group">
+        <label>CRIME CLASSIFICATION</label>
+        <select name="crime_type" style="padding: 12px;">
+          <option value="CYBER CRIME">CYBER CRIME</option>
+          <option value="FRAUD / THEFT">FRAUD / THEFT</option>
+          <option value="NARCOTICS">NARCOTICS</option>
+          <option value="VIOLENT CRIME">VIOLENT CRIME</option>
+          <option value="OTHER">OTHER</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>BIOMETRIC DATA (PHOTO)</label>
+        <div
+          style="border: 2px dashed var(--glass-border); padding: 2rem; border-radius: 12px; text-align: center; background: rgba(0,0,0,0.2);">
+          <input type="file" name="file" accept="image/*" required style="margin-bottom: 1rem;" />
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Upload facial photo for
+            secure storage.</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+        <button type="submit" class="btn-primary" style="width: 100%;">INITIALIZE SECURE PROCESSING</button>
+        <p
+          style="text-align: center; font-size: 0.7rem; color: var(--accent-primary); margin-top: 1rem; letter-spacing: 1px; font-weight: 600;">
+          [ SYSTEM WILL GENERATE SECURE HASH AND VAULT ON UPLOAD ]
+        </p>
+      </div>
+    </form>
   </div>
+</div>
 {% endblock %}

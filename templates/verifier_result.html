@@ -1,66 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Criminal Record | DNA Honey</title>
+  <title>Decrypted Record | Crime Secure</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
-<body>
-  <div class="layout">
-    <div class="sidebar">
-      <div class="brand">
-       
-        <div class="brand-text">
-          <div class="title">DNA Forensic</div>
-          <div class="sub">Verifier Panel</div>
-        </div>
-      </div>
-      <div class="nav">
-        <a href="{{ url_for('verifier_view') }}" class="nav-item"> Search Records</a>
-        <a href="{{ url_for('logout') }}" class="nav-item"> Logout</a>
-      </div>
+
+<body style="background: var(--bg-dark-primary);">
+  <nav class="glass-nav">
+    <div class="nav-logo">CRIME SECURE</div>
+    <div class="nav-links">
+      <a href="{{ url_for('verifier_view') }}">NEW SEARCH</a>
+      <a href="{{ url_for('logout') }}" style="color: var(--danger-primary);">LOGOUT terminal</a>
     </div>
-    
-    <div class="main">
-      <div class="topbar">
-        <div class="page-title">Criminal Record Details</div>
+  </nav>
+
+  <main class="hero-wrapper" style="padding-top: 100px; justify-content: flex-start;">
+    <div class="glass-panel auth-card" style="max-width: 700px; width: 95%;">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
         <div>
-          <span style="color: #a0a0a0; margin-right: 15px;">{{ get_indian_time().strftime('%d/%m/%Y %I:%M %p IST') }}</span>
-          {% if session.get('verifier') %}
-            <span class="badge">{{ session['verifier'] }}</span>
-          {% endif %}
+          <h2 class="title-cyan" style="text-align: left; margin-bottom: 0;">DECRYPTED RECORD</h2>
+          <p style="color: var(--success-primary); font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;">[ RECORD
+            ACCESSED SUCCESSFULLY ]</p>
+        </div>
+        <div style="text-align: right;">
+          <p style="font-size: 0.7rem; color: var(--text-muted);">REF_ID: #{{ record_id }}</p>
+          <p style="font-size: 0.7rem; color: var(--text-muted);">{{ get_indian_time().strftime('%d/%m/%Y %I:%M %p') }}
+          </p>
         </div>
       </div>
-      
-      <div class="content">
-        <div class="card">
-          <h3>Criminal Record</h3>
-          <div class="table-container">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>NAME</th>
-                  <th>CRIME TYPE</th>
-                  <th>EVIDENCE</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>{{ record_id }}</td>
-                  <td>{{ name }}</td>
-                  <td>{{ crime_type }}</td>
-                  <td>
-                    <a href="{{ download_url }}" class="btn small">Download</a>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 2rem;">
+        <div
+          style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1rem; border: 1px solid var(--glass-border); text-align: center;">
+          <div
+            style="width: 100%; aspect-ratio: 1; background: rgba(0,242,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--glass-border); margin-bottom: 1rem; overflow: hidden;">
+            {% if photo_path %}
+              <img src="{{ url_for('static', filename=photo_path) }}" 
+                   style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;" 
+                   alt="Verified Forensic Subject">
+            {% else %}
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                stroke="var(--accent-primary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                style="opacity: 0.5;">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            {% endif %}
+          </div>
+          <span class="badge" style="background: rgba(0,242,255,0.1); color: var(--accent-primary);">VALIDATED
+            SUBJECT</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+            <label style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Legal
+              Identity</label>
+            <p style="font-size: 1.25rem; font-weight: 700; color: #fff;">{{ name }}</p>
+          </div>
+          <div style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+            <label
+              style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Classification</label>
+            <p style="font-size: 1rem; color: var(--accent-primary); font-weight: 600;">{{ crime_type }}</p>
+          </div>
+          <div style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+            <label style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Status</label>
+            <p style="font-size: 0.9rem; color: var(--success-primary);">● RECORDS SECURED IN CUSTODIAL VAULT</p>
           </div>
         </div>
       </div>
+
+      <div
+        style="background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 12px; padding: 2rem; text-align: center;">
+        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-secondary);">SECURE DATA PACKAGE</h4>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5;">The original
+          record has been retrieved from the secure data vault. You may now download the
+          authenticated version.</p>
+
+        <a href="{{ download_url }}" class="btn-premium"
+          style="display: inline-flex; align-items: center; gap: 10px; width: auto; padding: 1rem 3rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          DOWNLOAD SECURE RECORD
+        </a>
+      </div>
+
+      <div style="margin-top: 2rem; text-align: center;">
+        <p style="font-size: 0.65rem; color: var(--text-muted); font-family: 'JetBrains Mono';">
+          [ AUTH_TOKEN: SHA256_{{ record_id }}... | ENCRYPTION: AES_SECURITY_LAYER ]
+        </p>
+      </div>
     </div>
-  </div>
+  </main>
 </body>
+
 </html>

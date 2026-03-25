@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Forensic System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body class="luxury-dark">
+    <nav class="glass-nav">
+        <div class="logo">🧬 FOR<span>ENSIC</span></div>
+        <div class="nav-links">
+            <a href="{{ url_for('login_admin') }}" class="btn-text">Admin Portal</a>
+            <a href="{{ url_for('login_verifier') }}" class="btn-primary">Verification Portal</a>
+        </div>
+    </nav>
+
+    <main class="hero-section">
+        <div class="hero-content">
+            <h1 class="glow-text">Secure Criminal <span>Data Management</span></h1>
+            <p>Advanced Forensic Security with DNA-Based Authentication and Honey Encryption.</p>
+            <div class="hero-actions">
+                <a href="{{ url_for('login_verifier') }}" class="main-btn">Start Verification</a>
+                <a href="{{ url_for('register_verifier') }}" class="secondary-btn">New Verifier? Sign Up</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="minimal-footer">
+        <p>&copy; 2026 DNA Forensic Team | All Rights Reserved</p>
+    </footer>
+</body>
+</html>
