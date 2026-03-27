@@ -252,51 +252,50 @@ def log_event(actor, action, details=None):
 
 
 def send_email_key(email, name, key):
-    """Send access key via email to verifier"""
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
+    """Send access key via email to verifier using Brevo API"""
+    import requests
     
-    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        error_msg = f"Email credentials not configured. GMAIL_USER: {GMAIL_USER}, GMAIL_APP_PASSWORD: {'***' if GMAIL_APP_PASSWORD else 'NOT SET'}"
+    brevo_api_key = os.getenv('BREVO_API_KEY')
+    sender_email = os.getenv('GMAIL_USER') or 'admin@crimesecure.local'
+    
+    if not brevo_api_key:
+        error_msg = f"Brevo API Key not configured. Using fallback log."
         print(error_msg)
         print(f"Access Key for {name}: {key}")
         flash(f"Email not configured. Access Key: {key}", "warning")
         return False
     
     try:
-        msg = MIMEMultipart()
-        msg['From'] = GMAIL_USER
-        msg['To'] = email
-        msg['Subject'] = "DNA Forensic System - Access Key"
+        url = "https://api.brevo.com/v3/smtp/email"
         
-        body = f"""Dear Verifier,
-
-Access Key for: {name}
-Key: {key}
-
-Use this key in the DNA Forensic System to verify the criminal record.
-
-⚠️ Keep this key confidential!
-
-Best regards,
-DNA Forensic Team"""
+        payload = {
+            "sender": {"email": sender_email, "name": "DNA Forensic Team"},
+            "to": [{"email": email, "name": "Verifier"}],
+            "subject": "DNA Forensic System - Access Key",
+            "textContent": f"Dear Verifier,\n\nAccess Key for: {name}\nKey: {key}\n\nUse this key in the DNA Forensic System to verify the criminal record.\n\n⚠️ Keep this key confidential!\n\nBest regards,\nDNA Forensic Team"
+        }
         
-        msg.attach(MIMEText(body, 'plain'))
+        headers = {
+            "accept": "application/json",
+            "api-key": brevo_api_key,
+            "content-type": "application/json"
+        }
         
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        server.sendmail(GMAIL_USER, email, msg.as_string())
-        server.quit()
+        response = requests.post(url, json=payload, headers=headers)
         
-        log_event("system", "email_sent", f"Verification key sent to {email} for {name}")
-        flash(f"Access key sent successfully to {email}", "success")
-        return True
-        
+        if response.status_code in [200, 201, 202]:
+            log_event("system", "email_sent", f"Verification key sent to {email} for {name} via Brevo")
+            flash(f"Access key sent successfully to {email}", "success")
+            return True
+        else:
+            print(f"Brevo Error: {response.text}")
+            log_event("system", "email_failed", f"Brevo API failed: {response.text}")
+            flash(f"Email failed to send. Access Key: {key}", "warning")
+            return False
+            
     except Exception as e:
         print(f"Failed to send email to {email}: {str(e)}")
-        log_event("system", "email_failed", f"Failed to send email to {email}: {str(e)}")
+        log_event("system", "email_failed", f"Exception: {str(e)}")
         flash(f"Email failed. Access Key: {key}", "warning")
         return False
 
