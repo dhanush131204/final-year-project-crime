@@ -189,5 +189,6 @@ def get_random_honey_data(original_name=""):
         "case1":         f"CR/{random.randint(1000, 9999)}/{random.randint(2018, 2024)}",
         "ps4_section":   f"IPC {random.randint(300, 500)}, {random.randint(30, 80)} IT Act",
         "case2":         f"IND No. {random.randint(100, 900)}, {random.randint(10, 99)} BNS",
+        "id_marks":      random.choice(["Mole on right cheek", "Scar on forehead", "Tattoo on left arm", "None", "Burn mark on shoulder", "Scar on chin"]),
         "target_gender": target_gender # EXTREMELY IMPORTANT: Used for picking the proxy photo
     }

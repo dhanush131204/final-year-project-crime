@@ -959,7 +959,7 @@ def admin_add_record_advanced():
             flash("All 12 forensic fields are required for advanced entry.", "error")
             return render_template("admin_add_record_advanced.html")
         crime_type = request.form.get("crime_type") or "Official Record"
-        mobile = request.form.get("mobile") # Verifier Email
+        mobile = "" # Verifier Email removed from UI; key generated and sent separately
         file = request.files.get("file") # Mugshot
         
         if not file or not allowed_file(file.filename):
@@ -1065,10 +1065,9 @@ def admin_add_record_advanced():
             conn.commit()
             conn.close()
             
-            # Send Email
-            send_email_key(mobile, form_data["name"], secret_key)
+            # Send Email - Removed since admin does this separately from Access Keys
             
-            flash(f"Official Records (Real & Honey) generated and secured for {form_data['name']}.", "success")
+            flash(f"Official Records (Real & Honey) generated and secured for {form_data['name']}. Remember to generate an Access Key.", "success")
             return redirect(url_for("admin_records"))
             
         except Exception as e:
@@ -1085,37 +1084,120 @@ def admin_edit_record(record_id):
     
     conn = get_conn()
     cur = conn.cursor()
-    
-    if request.method == "POST":
-        name = request.form.get("name")
-        mobile = request.form.get("mobile")
-        crime_type = request.form.get("crime_type")
-        
-        if not name or not mobile or not crime_type:
-            flash("Name, Email and Crime Type are required", "error")
-            return redirect(url_for("admin_edit_record", record_id=record_id))
-            
-        try:
-            cur.execute(
-                "UPDATE criminals SET name = ?, mobile = ?, crime_type = ? WHERE id = ?",
-                (name, mobile, crime_type, record_id)
-            )
-            conn.commit()
-            log_event(f"admin:{session.get('admin')}", "edit_criminal", f"Updated record {record_id} ({name})")
-            flash(f"Record for {name} updated successfully!", "success")
-            return redirect(url_for("admin_records"))
-        except Exception as e:
-            flash(f"Error updating record: {str(e)}", "error")
-    
     cur.execute("SELECT * FROM criminals WHERE id = ?", (record_id,))
     record = cur.fetchone()
-    conn.close()
     
     if not record:
+        conn.close()
         flash("Record not found", "error")
         return redirect(url_for("admin_records"))
+    
+    if request.method == "POST":
+        # 1. Collect all 13 fields from form
+        form_data = {
+            "name": request.form.get("name"),
+            "age_gender": request.form.get("age_gender"),
+            "address": request.form.get("address"),
+            "ps1": request.form.get("ps1"),
+            "fir1": request.form.get("fir1"),
+            "ps2": request.form.get("ps2"),
+            "fir2": request.form.get("fir2"),
+            "ps3": request.form.get("ps3"),
+            "arrest_date": request.form.get("arrest_date"),
+            "case1": request.form.get("case1"),
+            "ps4_section": request.form.get("ps4_section"),
+            "case2": request.form.get("case2"),
+            "id_marks": request.form.get("id_marks")
+        }
+        mobile = record["mobile"] # Retain existing email, field removed from UI
+        crime_type = request.form.get("crime_type")
+        file = request.files.get("file") # Optional new Mugshot
         
-    return render_template("admin_edit_record.html", record=record)
+        try:
+            timestamp = get_indian_time().strftime("%Y%m%d_%H%M%S")
+            mugshot_path = BASE_DIR / record["photo_path"].replace("static/", "static/") if record["photo_path"] else None
+            
+            # 2. Handle Photo Update if provided
+            if file and allowed_file(file.filename):
+                from PIL import Image
+                img_test = Image.open(file)
+                img_test.verify()
+                file.seek(0)
+                
+                # Save new Mugshot
+                filename = secure_filename(file.filename)
+                mugshot_filename = f"forensic_face_{timestamp}_{filename}"
+                new_mugshot_path = UPLOAD_DIR / mugshot_filename
+                file.save(str(new_mugshot_path))
+                mugshot_path = new_mugshot_path
+            
+            # 3. Re-generate Official Document (Primary Vault)
+            doc_filename = f"forensic_doc_{timestamp}.png"
+            doc_path = UPLOAD_DIR / doc_filename
+            generate_official_document(form_data, str(mugshot_path), str(doc_path))
+            
+            # 4. Re-generate Decoy (Honey) Document (Decoy Vault)
+            import random
+            honey_data = get_random_honey_data(form_data["name"])
+            target_gender = honey_data.get("target_gender", "Male").lower()
+            
+            gender_folder = HONEY_POOL / target_gender
+            pool_files = []
+            if gender_folder.exists():
+                pool_files = [f for f in os.listdir(gender_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            
+            if pool_files:
+                random_proxy = str(gender_folder / random.choice(pool_files))
+            else:
+                main_pool = [f for f in os.listdir(HONEY_POOL) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                random_proxy = str(HONEY_POOL / random.choice(main_pool)) if main_pool else str(mugshot_path)
+            
+            honey_doc_filename = f"decoy_doc_{timestamp}.png"
+            honey_doc_path = HONEY_DIR / honey_doc_filename
+            generate_official_document(honey_data, random_proxy, str(honey_doc_path))
+            
+            # 5. Tiling (Split Updated Original Doc)
+            tile_dirname = f"tiles_{timestamp}"
+            tile_path = TILES_DIR / tile_dirname
+            tile_path.mkdir(exist_ok=True)
+            split_image_into_tiles(str(doc_path), str(tile_path))
+            
+            # 6. Cleanup old assets (Optional but recommended for high security)
+            # (Skipping for now to avoid accidental data loss if save fails)
+
+            # 7. Update Database
+            cur.execute("""
+                UPDATE criminals SET 
+                    name = ?, mobile = ?, crime_type = ?, photo_path = ?, tile_dir = ?, honey_path = ?, 
+                    age_gender = ?, address = ?, ps1 = ?, fir1 = ?, ps2 = ?, fir2 = ?, ps3 = ?, 
+                    arrest_date = ?, case1 = ?, ps4_section = ?, case2 = ?, id_marks = ?, 
+                    honey_name = ?, honey_crime_type = ?
+                WHERE id = ?""",
+                (
+                    form_data["name"], mobile, crime_type, 
+                    f"static/records/primary_vault/{doc_filename}",
+                    f"static/tiles/{tile_dirname}",
+                    f"static/records/decoy_vault/{honey_doc_filename}",
+                    form_data["age_gender"], form_data["address"], form_data["ps1"], form_data["fir1"],
+                    form_data["ps2"], form_data["fir2"], form_data["ps3"], form_data["arrest_date"],
+                    form_data["case1"], form_data["ps4_section"], form_data["case2"], form_data["id_marks"],
+                    honey_data["name"], honey_data["crime_type"], record_id
+                )
+            )
+            conn.commit()
+            log_event(f"admin:{session.get('admin')}", "edit_criminal", f"Comprehensive update for record {record_id} ({form_data['name']})")
+            flash(f"Forensic record for {form_data['name']} has been updated and re-secured.", "success")
+            return redirect(url_for("admin_records"))
+            
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error during record update: {str(e)}", "error")
+            return redirect(url_for("admin_edit_record", record_id=record_id))
+        finally:
+            conn.close()
+
+    conn.close()
+    return render_template("admin_edit_record.html", record=record, to_static_filename=to_static_filename)
 @app.route("/admin/records/<int:record_id>/delete", methods=["POST"])
 def admin_delete_record(record_id):
     if not require_admin():
