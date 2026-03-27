@@ -29,17 +29,15 @@ ENV/
 # Environment Variables (SENSITIVE)
 .env
 
-# Databases
-database/*.db
-database/*.sqlite3
+# Databases (Un-commented to share with teammate)
+# database/*.db
+# database/*.sqlite3
 
-# Static / Uploaded Content (User Data)
-static/uploads/*
-static/tiles/*
-static/honey_data/*
-!static/uploads/.gitkeep
-!static/tiles/.gitkeep
-!static/honey_data/.gitkeep
+# Static / Uploaded Content (User Data) (Un-commented to share with teammate)
+# static/uploads/*
+# static/tiles/*
+# static/honey_data/*
+# static/records/*
 
 # IDEs
 .vscode/

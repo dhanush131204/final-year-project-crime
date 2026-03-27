@@ -1,47 +1,172 @@
 {% extends 'admin_layout.html' %}
 {% block title %}Modify Entry | Security Hub{% endblock %}
-{% block page_title %}Record Modification{% endblock %}
+{% block page_title %}Record Modification Terminal{% endblock %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 0 auto;">
-  <div class="card" style="border-top: 4px solid var(--accent-secondary);">
-    <div style="margin-bottom: 2rem;">
-      <h3 style="font-size: 1.25rem; color: #fff; margin-bottom: 0.5rem;">UPDATE RECORD DATA</h3>
-      <p style="color: var(--text-muted); font-size: 0.85rem;">Modify existing identity parameters. Updates will be
-        logged.</p>
-    </div>
+<div class="split-layout">
 
-    <form action="{{ url_for('admin_edit_record', record_id=record.id) }}" method="post">
-      <div class="form-group">
-        <label>FULL LEGAL NAME</label>
-        <input type="text" name="name" value="{{ record.name }}" required />
-      </div>
+    <!-- Form Column -->
+    <section class="card animate-in">
+        <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.25rem; color: #fff; margin-bottom: 0.5rem;">UPDATE RECORD DATA</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Modify existing identity parameters. Updates will be documented and logged.</p>
+        </div>
 
-      <div class="form-group">
-        <label>VERIFIER EMAIL ADDRESS</label>
-        <input type="email" name="mobile" value="{{ record.mobile }}" required />
-      </div>
+        <form action="{{ url_for('admin_edit_record', record_id=record.id) }}" method="post" enctype="multipart/form-data">
+            
+            <div class="section-label">01. IDENTITY ATTRIBUTES</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>FULL LEGAL NAME</label>
+                    <input type="text" name="name" value="{{ record.name }}" required oninput="upd('prev-name', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>AGE / GENDER</label>
+                    <input type="text" name="age_gender" value="{{ record.age_gender or '' }}" required oninput="upd('prev-age', this.value)">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>RESIDENTIAL ADDRESS</label>
+                <textarea name="address" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; color: #fff;" 
+                    required oninput="upd('prev-addr', this.value)">{{ record.address or '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label>IDENTIFICATION MARKS</label>
+                <input type="text" name="id_marks" value="{{ record.id_marks or '' }}" required oninput="upd('prev-id-marks', this.value)">
+            </div>
 
-      <div class="form-group">
-        <label>CRIME CLASSIFICATION</label>
-        <input type="text" name="crime_type" value="{{ record.crime_type }}" required />
-      </div>
+            <div class="section-label">02. CRIMINAL RECORD DETAILS</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>PRIMARY P.S.</label>
+                    <input type="text" name="ps1" value="{{ record.ps1 or '' }}" required oninput="upd('prev-ps1', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>PRIMARY FIR NO.</label>
+                    <input type="text" name="fir1" value="{{ record.fir1 or '' }}" required oninput="upd('prev-fir1', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>SECONDARY P.S.</label>
+                    <input type="text" name="ps2" value="{{ record.ps2 or '' }}" required oninput="upd('prev-ps2', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>SECONDARY FIR NO.</label>
+                    <input type="text" name="fir2" value="{{ record.fir2 or '' }}" required oninput="upd('prev-fir2', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>ARREST DATE</label>
+                    <input type="text" name="arrest_date" value="{{ record.arrest_date or '' }}" required oninput="upd('prev-date', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>CRIME CLASSIFICATION</label>
+                    <input type="text" name="crime_type" value="{{ record.crime_type }}" required>
+                </div>
+                <div class="form-group">
+                    <label>ARCHIVE P.S.</label>
+                    <input type="text" name="ps3" value="{{ record.ps3 or '' }}" required oninput="upd('prev-ps3', this.value)">
+                </div>
+            </div>
 
-      <div
-        style="margin-top: 2rem; display: flex; gap: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
-        <button type="submit" class="btn-premium" style="flex: 2;">SAVE MODIFICATIONS</button>
-        <a href="{{ url_for('admin_records') }}" class="btn-ghost"
-          style="flex: 1; display: flex; align-items: center; justify-content: center;">CANCEL</a>
-      </div>
-    </form>
-  </div>
+            <div class="section-label">03. LEGAL PROCEEDINGS</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>CASE NO. 01</label>
+                    <input type="text" name="case1" value="{{ record.case1 or '' }}" required oninput="upd('prev-case1', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>IPC SECTIONS</label>
+                    <input type="text" name="ps4_section" value="{{ record.ps4_section or '' }}" required oninput="upd('prev-ps4', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>CASE NO. 02</label>
+                    <input type="text" name="case2" value="{{ record.case2 or '' }}" required oninput="upd('prev-case2', this.value)">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>REPLACE BIOMETRIC PHOTO (OPTIONAL)</label>
+                    <input type="file" name="file" accept="image/*" onchange="previewPhoto(this)">
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 5px;">If you upload a new photo, the forensic document and all security segments will be re-generated.</p>
+                </div>
+            </div>
 
-  <div
-    style="margin-top: 2rem; padding: 1rem; background: rgba(244, 63, 94, 0.05); border-radius: 12px; border: 1px solid rgba(244, 63, 94, 0.1);">
-    <p style="font-size: 0.75rem; color: var(--danger-primary); margin: 0; text-align: center;">
-      <strong>NOTICE:</strong> Editing a record does not reset the security hash but may affect verifier access if the
-      email is changed.
-    </p>
-  </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                <button type="submit" class="btn-primary" style="flex: 2; padding: 1rem;">
+                    SAVE MODIFICATIONS
+                </button>
+                <a href="{{ url_for('admin_records') }}" class="btn-ghost" style="flex: 1; padding: 1rem; text-align: center;">
+                    CANCEL
+                </a>
+            </div>
+        </form>
+    </section>
+
+    <!-- Preview Column -->
+    <aside class="live-preview-container">
+        <div style="margin-bottom: 1.5rem;">
+            <h4 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">DYNAMIC DATA PREVIEW</h4>
+        </div>
+
+        <div class="forensic-doc" id="doc-element">
+            <div class="doc-header">
+                <h2 style="font-size: 1.25rem; font-weight: 900; letter-spacing: 4px;">OFFICIAL REPORT</h2>
+                <p style="font-size: 0.6rem; margin-top: 4px;">AMENDMENT RECORD | SECURE TERMINAL</p>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <div style="flex: 1;">
+                    <div class="doc-row"><span>NAME</span><span id="prev-name">{{ record.name }}</span></div>
+                    <div class="doc-row"><span>AGE/SEX</span><span id="prev-age">{{ record.age_gender or '---' }}</span></div>
+                    <div class="doc-row"><span>ID MARKS</span><span id="prev-id-marks">{{ record.id_marks or '---' }}</span></div>
+                    <div class="doc-row"><span>P.S. (1)</span><span id="prev-ps1">{{ record.ps1 or '---' }}</span></div>
+                    <div class="doc-row"><span>FIR (1)</span><span id="prev-fir1">{{ record.fir1 or '---' }}</span></div>
+                    <div class="doc-row"><span>P.S. (ARC)</span><span id="prev-ps3">{{ record.ps3 or '---' }}</span></div>
+                    <div class="doc-row"><span>SECTIONS</span><span id="prev-ps4">{{ record.ps4_section or '---' }}</span></div>
+                    <div class="doc-row"><span>CASE (2)</span><span id="prev-case2">{{ record.case2 or '---' }}</span></div>
+                    <div class="doc-row"><span>DATE</span><span id="prev-date">{{ record.arrest_date or '---' }}</span></div>
+                </div>
+                <div id="photo-preview-box" style="width: 100px; height: 120px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <img src="{{ url_for('static', filename=to_static_filename(record.photo_path)) if record.photo_path else '' }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+
+            <div style="margin-top: 1rem;">
+                <div class="doc-row" style="border-bottom: none;"><span>ADDRESS:</span></div>
+                <p id="prev-addr" style="font-size: 0.75rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; line-height: 1.2;">
+                    {{ record.address or '---' }}
+                </p>
+            </div>
+
+            <div style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed #ccc; padding-top: 0.5rem;">
+                <p style="font-size: 0.5rem; color: #666;">IDENTITY DATA IS SUBJECT TO CHANGE UPON SAVE</p>
+                <p style="font-size: 0.5rem; color: #666; margin-top: 2px;">ALL MODIFICATIONS ARE CRYPTOGRAPHICALLY LOGGED</p>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(244, 63, 94, 0.05); border-radius: 12px; border: 1px solid rgba(244, 63, 94, 0.1);">
+            <p style="font-size: 0.8rem; color: var(--danger-primary); font-weight: 600; margin-bottom: 0.5rem;">
+                ⚠️ AUDIT NOTIFICATION
+            </p>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">
+                Modifying these parameters will trigger an automatic update of the encrypted forensic assets. Ensure all data matches the physical case file before authorizing modifications.
+            </p>
+        </div>
+    </aside>
+
 </div>
+
+<script>
+    function upd(id, val) {
+        document.getElementById(id).textContent = val || '---';
+    }
+
+    function previewPhoto(input) {
+        const box = document.getElementById('photo-preview-box');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                box.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
 {% endblock %}
