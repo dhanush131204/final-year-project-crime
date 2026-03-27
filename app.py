@@ -20,6 +20,7 @@ from flask import (
     session,
     flash,
     send_file,
+    jsonify
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -335,8 +336,28 @@ def login_admin():
             flash("Invalid Admin Credentials", "error")
             return redirect(url_for("index", auth_error=1))
             
-    return redirect(url_for("index", _anchor="login"))
-
+@app.route("/admin/verify-action", methods=["POST"])
+def admin_verify_action():
+    if "admin" not in session:
+        return jsonify({"success": False, "message": "Admin session expired. Please login again."}), 401
+    
+    password = request.form.get("password")
+    if not password:
+        return jsonify({"success": False, "message": "Password is required."}), 400
+        
+    username = session["admin"]
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT password_hash FROM users WHERE role='admin' AND username=?", (username,))
+    admin = cur.fetchone()
+    conn.close()
+    
+    if admin and check_password_hash(admin["password_hash"], password):
+        log_event(f"admin:{username}", "security_verified", "Sensitive action authorized via popup")
+        return jsonify({"success": True})
+    else:
+        log_event(f"admin:{username}", "security_failed", "Failed authorization attempt for sensitive action")
+        return jsonify({"success": False, "message": "Invalid password. Access denied."}), 403
 
 def require_admin():
     if "admin" not in session:

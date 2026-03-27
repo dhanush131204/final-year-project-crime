@@ -43,13 +43,14 @@
           </td>
           <td>
             <div style="display: flex; gap: 0.5rem;">
-              <a href="{{ url_for('admin_edit_record', record_id=r.id) }}" class="btn-ghost"
-                style="padding: 6px 12px; font-size: 0.75rem;">EDIT</a>
-              <form action="{{ url_for('admin_delete_record', record_id=r.id) }}" method="POST" style="display:inline;"
-                onsubmit="return confirm('⚠️ CRITICAL: This will permanently delete the criminal file and all forensic evidence. Continue?');">
-                <button type="submit" class="btn-ghost"
-                  style="padding: 6px 12px; font-size: 0.75rem; color: var(--danger-primary);">DELETE</button>
+              <button onclick='confirmEdit("{{ url_for("admin_edit_record", record_id=r.id) }}")' class="btn-ghost"
+                style="padding: 6px 12px; font-size: 0.75rem; cursor: pointer; border: 1px solid var(--glass-border);">EDIT</button>
+              
+              <form id="delete-form-{{ r.id }}" action="{{ url_for('admin_delete_record', record_id=r.id) }}" method="POST" style="display:inline;">
+                <button type="button" onclick='confirmDelete("{{ r.id }}", "{{ r.name }}")' class="btn-ghost"
+                  style="padding: 6px 12px; font-size: 0.75rem; color: var(--danger-primary); cursor: pointer; border: 1px solid var(--glass-border);">DELETE</button>
               </form>
+              
               <a href="{{ url_for('admin_record_original', record_id=r.id) }}" download class="btn-ghost"
                 style="padding: 6px 12px; font-size: 0.75rem; color: var(--accent-primary);">DOWNLOAD</a>
             </div>
@@ -71,4 +72,33 @@
   </div>
   {% endif %}
 </section>
+
+<script>
+  function confirmEdit(url) {
+    if (typeof openSecurityModal === 'function') {
+      openSecurityModal(function() {
+        if (confirm('🛑 SECURITY ALERT: Modifications to forensic records are logged. This update cannot be simplified or undone later. Continue?')) {
+          window.location.href = url;
+        }
+      });
+    } else {
+      window.location.href = url;
+    }
+  }
+
+  function confirmDelete(id, name) {
+    if (typeof openSecurityModal === 'function') {
+      openSecurityModal(function() {
+        const finalMsg = "⚠️ CRITICAL WARNING: You are about to permanently purge the file for '" + name + "'. \n\nThis will destroy the Original Document, Forensic Tiles, and Decoy Vault entries. This action CANNOT BE UNDONE. \n\nConfirm permanent deletion?";
+        if (confirm(finalMsg)) {
+          document.getElementById('delete-form-' + id).submit();
+        }
+      });
+    } else {
+      if (confirm('Permanently delete ' + name + '?')) {
+        document.getElementById('delete-form-' + id).submit();
+      }
+    }
+  }
+</script>
 {% endblock %}
