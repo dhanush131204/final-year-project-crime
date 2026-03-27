@@ -52,7 +52,37 @@ def get_indian_time():
 # Paths & Config
 # -------------------------------------------------
 DB_DIR = BASE_DIR / "database"
-DB_PATH = DB_DIR / "records.db"
+LEGACY_BASE_DIR = BASE_DIR / "crime"
+LEGACY_DB_PATH = LEGACY_BASE_DIR / "database" / "records.db"
+
+
+def _get_table_count(db_path, table_name):
+    if not db_path.exists():
+        return -1
+    try:
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute(f"SELECT COUNT(*) FROM {table_name}")
+        count = cur.fetchone()[0]
+        conn.close()
+        return count
+    except sqlite3.Error:
+        return -1
+
+
+def choose_db_path():
+    primary_db = DB_DIR / "records.db"
+    primary_count = _get_table_count(primary_db, "criminals")
+    legacy_count = _get_table_count(LEGACY_DB_PATH, "criminals")
+
+    # In cloned repos there may be both a new root app and an older nested app.
+    # Prefer the database that already has records so the dashboard shows the real data.
+    if legacy_count > primary_count:
+        return LEGACY_DB_PATH
+    return primary_db
+
+
+DB_PATH = choose_db_path()
 
 STATIC_DIR = BASE_DIR / "static"
 UPLOAD_DIR = STATIC_DIR / "records" / "primary_vault"
