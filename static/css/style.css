@@ -8,9 +8,9 @@
 
 :root {
   /* Core Palette - Deep Space & Forensic Cyan */
-  --bg-dark-primary: #05080d;
-  --bg-dark-secondary: #0a0f18;
-  --bg-dark-tertiary: #161e2b;
+  --bg-dark-primary: #0a192f;
+  --bg-dark-secondary: #112240;
+  --bg-dark-tertiary: #1b2a4e;
 
   --accent-primary: #00f2ff;
   --accent-secondary: #0ea5e9;
@@ -96,10 +96,10 @@ html {
 body {
   font-family: 'Outfit', sans-serif;
   background-color: var(--bg-dark-primary);
-  /* Premium Forensic Tech Background with Overlay */
+  /* Premium Midnight Blue Forensic Data Hub Background */
   background-image: 
-    linear-gradient(to bottom, rgba(5, 8, 13, 0.85), rgba(5, 8, 13, 0.95)),
-    url('https://images.unsplash.com/photo-1639322537228-f710d846310a?auto=format&fit=crop&q=80&w=1932');
+    radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.7) 0%, rgba(10, 25, 47, 1) 100%),
+    url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;

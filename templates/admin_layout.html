@@ -286,7 +286,7 @@
             <polyline points="16 17 21 12 16 7"></polyline>
             <line x1="21" y1="12" x2="9" y2="12"></line>
           </svg>
-          <span>System Logout</span>
+          <span>LOGOUT</span>
         </a>
       </div>
     </aside>
@@ -295,8 +295,8 @@
       <header class="card-header"
         style="margin-bottom: 2.5rem; background: var(--bg-dark-secondary); padding: 1.5rem 2rem; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
         <h2 class="card-title" style="font-size: 1.5rem;">{% block page_title %}Terminal Overview{% endblock %}</h2>
-        <div class="badge badge-cyan">
-          LOGGED AS: {{ session.get('admin') }}
+        <div class="badge badge-cyan" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+          SYSTEM ADMIN: {{ session.get('admin') }}
         </div>
       </header>
 

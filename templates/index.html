@@ -34,12 +34,12 @@
         <div class="hero-content">
             <div class="hero-tag">Active Defense System</div>
             <h1 class="hero-title">
-                The World's Most <br>
-                <span style="color: var(--accent-primary);">Authenticated</span> Security
+                The Ultimate Shield for <br>
+                <span style="color: var(--accent-primary);">Forensic Data</span> Integrity
             </h1>
             <p class="hero-subtitle">
-                Protecting criminal records using advanced encryption and multiple active security layers. Secure.
-                Encrypted. Reliable.
+                Protecting criminal records using next-gen DNA encryption and multi-layered honey deception security. 
+                Robust. Deceptive. Unbreakable.
             </p>
 
             <div class="hero-actions">
@@ -120,25 +120,25 @@
             </div>
 
             <form action="{{ url_for('register_verifier') }}" method="POST">
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom: 1rem;">
                     <label class="light-label">FULL NAME</label>
                     <input type="text" name="username" class="modal-input" placeholder="e.g. Insp. Aryan Sharma"
-                        required>
+                        required style="padding: 0.75rem;">
                 </div>
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom: 1rem;">
                     <label class="light-label">EMAIL ADDRESS</label>
                     <input type="email" name="email" class="modal-input" placeholder="e.g. inspector@police.gov"
-                        required>
+                        required style="padding: 0.75rem;">
                 </div>
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom: 1rem;">
                     <label class="light-label">CREATE PASSWORD</label>
-                    <input type="password" name="password" class="modal-input" placeholder="••••••••" required>
+                    <input type="password" name="password" class="modal-input" placeholder="••••••••" required style="padding: 0.75rem;">
                 </div>
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom: 1rem;">
                     <label class="light-label">CONFIRM PASSWORD</label>
-                    <input type="password" name="confirm" class="modal-input" placeholder="••••••••" required>
+                    <input type="password" name="confirm" class="modal-input" placeholder="••••••••" required style="padding: 0.75rem;">
                 </div>
-                <button type="submit" class="btn-modal">AUTHORIZE ACCOUNT CREATION</button>
+                <button type="submit" class="btn-modal" style="margin-top: 1rem; padding: 0.85rem;">AUTHORIZE ACCOUNT CREATION</button>
             </form>
 
             <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: #666;">
@@ -168,15 +168,23 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0.9);
-            width: 90%;
+            width: 95%;
             max-width: 420px;
+            max-height: 90vh;
+            overflow-y: auto;
             border-radius: 20px;
-            padding: 2.5rem;
+            padding: 2rem 1.5rem;
             z-index: 1501;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
             display: none;
             opacity: 0;
             transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .auth-modal-card::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome, Safari and Opera */
         }
 
         .modal-overlay.active,
@@ -195,8 +203,9 @@
         }
 
         .admin-theme {
-            background: #111;
-            border: 1px solid #333;
+            background: linear-gradient(145deg, #0a0f18, #161e2b);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(0, 242, 255, 0.05);
         }
 
         .terminal-icon {
@@ -281,18 +290,28 @@
 
         .modal-close {
             position: absolute;
-            top: 1.25rem;
-            right: 1.25rem;
-            background: rgba(128, 128, 128, 0.1);
+            top: 1rem;
+            right: 1rem;
+            background: rgba(128, 128, 128, 0.15);
             border: none;
             border-radius: 50%;
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             cursor: pointer;
-            color: #999;
+            color: #666;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.6rem;
+            transition: 0.3s;
+            line-height: 0;
+            padding-bottom: 4px; /* Centering the times symbol vertically */
+        }
+
+        .modal-close:hover {
+            background: rgba(244, 63, 94, 0.2);
+            color: #f43f5e;
+            transform: rotate(90deg);
         }
     </style>
 
