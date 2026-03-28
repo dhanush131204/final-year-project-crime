@@ -324,8 +324,12 @@
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             if (params.has('auth_error')) {
-                // Re-open based on last action if possible, defaulting to admin for admin errors
-                openAdmin();
+                const role = params.get('role');
+                if (role === 'verifier') {
+                    openVerifier('login');
+                } else {
+                    openAdmin();
+                }
             }
 
             // Automatically hide alert messages after 5 seconds

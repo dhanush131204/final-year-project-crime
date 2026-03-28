@@ -519,6 +519,42 @@ def admin_analytics():
     )
 
 
+@app.route("/admin/users")
+def admin_users():
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+    
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT id, role, username, email, created_at FROM users ORDER BY id DESC")
+    users = cur.fetchall()
+    conn.close()
+    
+    return render_template("admin_users.html", users=users)
+
+
+@app.route("/admin/users/delete/<int:user_id>", methods=["POST"])
+def admin_delete_user(user_id):
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+    
+    if session.get("admin") == "admin" and user_id == 1:
+        flash("Cannot delete the primary admin account.", "error")
+        return redirect(url_for("admin_users"))
+
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+        flash("User deleted successfully.", "success")
+    except Exception as e:
+        flash(f"Error deleting user: {str(e)}", "error")
+        
+    return redirect(url_for("admin_users"))
+
+
 @app.route("/admin")
 def admin_dashboard():
     if not require_admin():

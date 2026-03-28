@@ -77,9 +77,11 @@
   function confirmEdit(url) {
     if (typeof openSecurityModal === 'function') {
       openSecurityModal(function() {
-        if (confirm('🛑 SECURITY ALERT: Modifications to forensic records are logged. This update cannot be simplified or undone later. Continue?')) {
-          window.location.href = url;
-        }
+        openConfirmModal(
+          'SECURITY ALERT',
+          '🛑 SECURITY ALERT: Modifications to forensic records are logged. This update cannot be simplified or undone later.\n\nContinue with modification?',
+          () => { window.location.href = url; }
+        );
       });
     } else {
       window.location.href = url;
@@ -90,14 +92,18 @@
     if (typeof openSecurityModal === 'function') {
       openSecurityModal(function() {
         const finalMsg = "⚠️ CRITICAL WARNING: You are about to permanently purge the file for '" + name + "'. \n\nThis will destroy the Original Document, Forensic Tiles, and Decoy Vault entries. This action CANNOT BE UNDONE. \n\nConfirm permanent deletion?";
-        if (confirm(finalMsg)) {
-          document.getElementById('delete-form-' + id).submit();
-        }
+        openConfirmModal(
+          'CRITICAL LOG TERMINATION',
+          finalMsg,
+          () => { document.getElementById('delete-form-' + id).submit(); }
+        );
       });
     } else {
-      if (confirm('Permanently delete ' + name + '?')) {
-        document.getElementById('delete-form-' + id).submit();
-      }
+      openConfirmModal(
+        'PERMANENT DELETE',
+        'Permanently delete ' + name + '?',
+        () => { document.getElementById('delete-form-' + id).submit(); }
+      );
     }
   }
 </script>

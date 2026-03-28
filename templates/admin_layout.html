@@ -263,6 +263,19 @@
             <span>Access Keys</span>
           </a>
         </li>
+        <li>
+          <a href="{{ url_for('admin_users') }}"
+            class="nav-item {% if '/admin/users' in request.path %}active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Verifier Directory</span>
+          </a>
+        </li>
       </ul>
 
       <div style="margin-top: auto;">
@@ -303,6 +316,31 @@
         {% block content %}{% endblock %}
       </div>
     </main>
+  </div>
+
+  <!-- Generic Confirmation Modal -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="security-modal" style="border-color: var(--danger-primary); box-shadow: 0 0 50px rgba(255, 71, 87, 0.15);">
+      <div class="security-header">
+        <div class="security-icon" style="color: var(--danger-primary); border-color: var(--danger-primary); background: rgba(255, 71, 87, 0.1);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h3 class="security-title" id="confirmTitle">System Action</h3>
+        <p class="security-subtitle" id="confirmMessage" style="white-space: pre-line;">Action verification required.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeConfirmModal()">CANCEL</button>
+        <button type="button" class="btn-verify" id="confirmBtn" style="background: var(--danger-primary); color: white; font-weight: 800;">
+          CONFIRM & PROCEED
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Security Verification Modal -->
@@ -347,6 +385,26 @@
 
   <script>
     let currentAction = null;
+
+    function openConfirmModal(title, message, onConfirm) {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
+      const modal = document.getElementById('confirmModal');
+      modal.classList.add('active');
+      
+      const confirmBtn = document.getElementById('confirmBtn');
+      const newBtn = confirmBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+      
+      newBtn.addEventListener('click', () => {
+        onConfirm();
+        closeConfirmModal();
+      });
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.remove('active');
+    }
 
     function openSecurityModal(onSuccess) {
       currentAction = onSuccess;
