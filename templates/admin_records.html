@@ -43,7 +43,7 @@
           </td>
           <td>
             <div style="display: flex; gap: 0.5rem;">
-              <button onclick='confirmEdit("{{ url_for("admin_edit_record", record_id=r.id) }}")' class="btn-ghost"
+              <button onclick="confirmEdit(`{{ url_for('admin_edit_record', record_id=r.id) }}`)" class="btn-ghost"
                 style="padding: 6px 12px; font-size: 0.75rem; cursor: pointer; border: 1px solid var(--glass-border);">EDIT</button>
               
               <form id="delete-form-{{ r.id }}" action="{{ url_for('admin_delete_record', record_id=r.id) }}" method="POST" style="display:inline;">
