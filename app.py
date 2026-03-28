@@ -809,16 +809,11 @@ def admin_keys_send():
             conn.commit()
             conn.close()
             
-            # Send key based on contact type
-            if contact_type == "email":
-                send_email_key(contact, criminal["name"], secret_key)
-                method = "email"
-            else:
-                send_sms_key(contact, criminal["name"], secret_key)
-                method = "SMS"
+            # Send key via email
+            send_email_key(contact, criminal["name"], secret_key)
             
-            log_event(f"admin:{session.get('admin')}", "generate_key", f"Generated key for record {record_id} and sent to {contact}")
-            flash(f"Access key generated and sent to {contact} via {method}!", "success")
+            log_event(f"admin:{session.get('admin')}", "generate_key", f"Generated key for record {record_id} and sent to {contact} via email")
+            flash(f"Access key generated and sent to {contact} via SECURE EMAIL!", "success")
             return redirect(url_for("admin_keys"))
             
         except Exception as e:

@@ -23,18 +23,12 @@
         </select>
       </div>
 
-      <div class="form-group">
-        <label>TRANSMISSION METHOD</label>
-        <select name="contact_type" required
-          style="padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff; border-radius: 8px; width: 100%;">
-          <option value="email">SECURE EMAIL PORTAL</option>
-          <option value="sms">SECURE SMS TRANSMISSION</option>
-        </select>
-      </div>
+      <!-- Transmission Method: SECURE EMAIL (Simplified) -->
+      <input type="hidden" name="contact_type" value="email">
 
       <div class="form-group">
-        <label>RECIPIENT ENDPOINT</label>
-        <input type="text" name="contact" placeholder="agent@police.gov or +1234567890" required />
+        <label>RECIPIENT EMAIL</label>
+        <input type="email" name="contact" placeholder="agent@police.gov" required />
       </div>
 
       <div style="margin-top: 2.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">

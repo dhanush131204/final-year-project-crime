@@ -122,7 +122,7 @@ def generate_official_document(data, mugshot_path, output_path):
     curr_y    = 118
     row_h     = 68 # Slightly smaller rows to fit 13 fields
     split_row = 5
-    value_x   = text_left + 215 # Brought text closer for a modern professional look
+    value_x   = text_left + 265 # Increased indentation for better label spacing
 
     for i, (label, value) in enumerate(fields):
         # Determine max width for the value
