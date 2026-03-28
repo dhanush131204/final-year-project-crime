@@ -215,12 +215,20 @@ def init_db():
     # Migration for criminals: Add new columns if they don't exist
     cur.execute("PRAGMA table_info(criminals)")
     criminal_cols = [row[1] for row in cur.fetchall()]
-    if "id_marks" not in criminal_cols:
-        cur.execute("ALTER TABLE criminals ADD COLUMN id_marks TEXT")
-    if "honey_name" not in criminal_cols:
-        cur.execute("ALTER TABLE criminals ADD COLUMN honey_name TEXT")
-    if "honey_crime_type" not in criminal_cols:
-        cur.execute("ALTER TABLE criminals ADD COLUMN honey_crime_type TEXT")
+    
+    needed_cols = [
+        "age_gender", "address", "ps1", "fir1", "ps2", "fir2", "ps3", 
+        "arrest_date", "case1", "ps4_section", "case2", "id_marks", 
+        "honey_name", "honey_crime_type"
+    ]
+    
+    for col in needed_cols:
+        if col not in criminal_cols:
+            try:
+                cur.execute(f"ALTER TABLE criminals ADD COLUMN {col} TEXT")
+                print(f"Added missing column: {col}")
+            except sqlite3.Error as e:
+                print(f"Error adding column {col}: {e}")
 
     # Default Admin
     cur.execute("SELECT id FROM users WHERE role='admin'")
