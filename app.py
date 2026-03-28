@@ -144,6 +144,7 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         role TEXT,
         username TEXT UNIQUE,
+        email TEXT UNIQUE,
         password_dna TEXT,
         password_hash TEXT,
         created_at TEXT
@@ -201,9 +202,15 @@ def init_db():
 
     # Migration for logs: Add user_agent if it doesn't exist
     cur.execute("PRAGMA table_info(logs)")
-    cols = [row[1] for row in cur.fetchall()]
-    if "user_agent" not in cols:
+    logs_cols = [row[1] for row in cur.fetchall()]
+    if "user_agent" not in logs_cols:
         cur.execute("ALTER TABLE logs ADD COLUMN user_agent TEXT")
+
+    # Migration for users: Add email if it doesn't exist
+    cur.execute("PRAGMA table_info(users)")
+    user_cols = [row[1] for row in cur.fetchall()]
+    if "email" not in user_cols:
+        cur.execute("ALTER TABLE users ADD COLUMN email TEXT")
 
     # Migration for criminals: Add new columns if they don't exist
     cur.execute("PRAGMA table_info(criminals)")
@@ -407,20 +414,24 @@ def login_verifier():
 
         conn = get_conn()
         cur = conn.cursor()
+        # Explicitly check both the username (Full Name) and the Email address column
         cur.execute(
-            "SELECT * FROM users WHERE role='verifier' AND username=?",
-            (username,),
+            "SELECT * FROM users WHERE (role='verifier' OR role='Verifier') AND (username=? OR email=?)",
+            (username, username),
         )
         user = cur.fetchone()
         conn.close()
 
-        if user and user["password_hash"] and check_password_hash(user["password_hash"], password):
-            session["verifier"] = username
-            log_event(f"verifier:{username}", "login")
+        if user and check_password_hash(user["password_hash"], password):
+            # Ensure we store the role and id in session as well
+            session["verifier"] = user["username"]
+            session["role"] = "verifier"
+            log_event(f"verifier:{username}", "login", "Successful verifier authentication")
             return redirect(url_for("verifier_view"))
         else:
-            flash("Invalid Verifier Credentials", "error")
-            return redirect(url_for("index", auth_error=1))
+            log_event(f"anonymous", "login_failed", f"Failed verifier login attempt for user: {username}")
+            flash("Invalid Verifier Credentials. Please check your username and password.", "error")
+            return redirect(url_for("index", auth_error=1, role="verifier", _anchor="login"))
 
     return redirect(url_for("index", _anchor="login"))
 
@@ -428,7 +439,8 @@ def login_verifier():
 @app.route("/register/verifier", methods=["GET", "POST"])
 def register_verifier():
     if request.method == "POST":
-        username = request.form["username"]
+        username = request.form["username"] # Full Name
+        email = request.form["email"]       # Email Address
         password = request.form["password"]
         confirm = request.form["confirm"]
 
@@ -440,16 +452,17 @@ def register_verifier():
         cur = conn.cursor()
         try:
             cur.execute(
-                "INSERT INTO users(role, username, password_hash, created_at) VALUES (?,?,?,?)",
+                "INSERT INTO users(role, username, email, password_hash, created_at) VALUES (?,?,?,?,?)",
                 (
                     "verifier",
                     username,
+                    email,
                     generate_password_hash(password),
                     get_indian_time().isoformat(),
                 ),
             )
             conn.commit()
-            flash("Registration Successful", "success")
+            flash("Registration Successful. Please Login.", "success")
             return redirect(url_for("index", _anchor="login"))
         except sqlite3.IntegrityError:
             flash("Username already exists", "error")
@@ -1299,7 +1312,7 @@ def verifier_retrieve():
     key = request.form.get("key")
     
     if not key:
-        return render_template("verifier_view.html", error="Please enter a key")
+        return render_template("verifier_view.html", error="Please enter a forensic access key.")
     
     try:
         conn = get_conn()
@@ -1315,7 +1328,7 @@ def verifier_retrieve():
         if key_data and key_data["valid"]:
             # Valid key - return original data
             log_event(f"verifier:{session.get('verifier')}", "key_used", f"Successfully used key for record {key_data['record_id']}")
-            
+            conn.close()
             return render_template(
                 "verifier_result.html",
                 record_id=key_data["record_id"],
@@ -1326,30 +1339,44 @@ def verifier_retrieve():
                 get_indian_time=get_indian_time
             )
         else:
-            # Invalid/wrong key - return honey/decoy data
-            # First, check if we can serve a professional Honey Document from our database
+            # STRICT HONEY ENCRYPTION LOGIC:
+            # Never redirect to login, never say 'invalid key'.
+            
+            # 1. Try to find a real decoy record
             cur.execute("SELECT id, honey_name, honey_crime_type, honey_path FROM criminals WHERE honey_name IS NOT NULL ORDER BY RANDOM() LIMIT 1")
             decoy_record = cur.fetchone()
+            conn.close()
+            
+            log_event(f"verifier:{session.get('verifier')}", "honey_triggered", f"Invalid key: {key[:8]}... - Served Decoy File")
             
             if decoy_record:
-                log_event(f"verifier:{session.get('verifier')}", "honey_triggered", f"Invalid key used, served secure protection data")
+                # Return real database decoy
                 return render_template(
                     "verifier_result.html",
                     record_id=f"H{decoy_record['id']}",
-                    name=decoy_record["honey_name"] or "Vikram Rathore",
-                    crime_type=decoy_record["honey_crime_type"] or "Official Record",
+                    name=decoy_record["honey_name"],
+                    crime_type=decoy_record["honey_crime_type"],
                     photo_path=to_static_filename(decoy_record["honey_path"]),
                     download_url=url_for("download_honey", record_id=decoy_record["id"]),
                     get_indian_time=get_indian_time
                 )
-            
-            # Legacy fallback
-            return render_template("verifier_view.html", error="No secure data found for this key")
-        
-        conn.close()
+            else:
+                # 2. Emergency Fallback: If DB is fresh/empty, generate a virtual decoy
+                # we don't redirect, we show a 'Virtual Decoy'
+                return render_template(
+                    "verifier_result.html",
+                    record_id="S-00892",
+                    name="Rajesh Sharma",
+                    crime_type="FINANCIAL FRAUD",
+                    photo_path="records/decoy_vault/placeholder_honey.png", # Simulated path
+                    download_url="#",
+                    get_indian_time=get_indian_time,
+                    virtual_honey=True
+                )
         
     except Exception as e:
-        return render_template("verifier_view.html", error=f"Error processing key: {str(e)}")
+        if 'conn' in locals(): conn.close()
+        return render_template("verifier_view.html", error=f"Forensic Engine Error: {str(e)}")
 
 
 @app.route("/download/honey/<int:record_id>")
