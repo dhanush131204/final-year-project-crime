@@ -26,9 +26,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 # Utils
-from utils.dna_logic import encode_to_dna
+from utils.dna_logic import encode_to_dna, decode_from_dna
 from utils.image_processor import split_image_into_tiles
 from utils.honey_logic import generate_honey_image
+from utils.encryption_utils import encrypt_file, decrypt_file_to_bytes
+import io
 
 # Indian timezone
 INDIAN_TZ = pytz.timezone('Asia/Kolkata')
@@ -419,29 +421,33 @@ def require_admin():
 @app.route("/login/verifier", methods=["GET", "POST"])
 def login_verifier():
     if request.method == "POST":
-        username = request.form["username"]
+        username = request.form["username"] # This is the input from Modal (can be Name or Email)
         password = request.form["password"]
 
         conn = get_conn()
         cur = conn.cursor()
-        # Explicitly check both the username (Full Name) and the Email address column
+        
+        # DNA Protection Search
+        encoded_input = encode_to_dna(username)
+        
+        # Check DNA username OR DNA email
         cur.execute(
-            "SELECT * FROM users WHERE (role='verifier' OR role='Verifier') AND (username=? OR email=?)",
-            (username, username),
+            "SELECT * FROM users WHERE (role='verifier' OR role='Verifier') AND (username=? OR email=? OR username=? OR email=?)",
+            (username, username, encoded_input, encoded_input),
         )
         user = cur.fetchone()
         conn.close()
 
         if user and check_password_hash(user["password_hash"], password):
-            # Ensure we store the role and id in session as well
-            session["verifier"] = user["username"]
+            # Session uses the plain-text name for display
+            session["verifier"] = username
             session["role"] = "verifier"
-            log_event(f"verifier:{username}", "login", "Successful verifier authentication")
+            log_event(f"verifier:{username}", "login", "Authorized via Home Modal (DNA Active)")
             return redirect(url_for("verifier_view"))
         else:
-            log_event(f"anonymous", "login_failed", f"Failed verifier login attempt for user: {username}")
-            flash("Invalid Verifier Credentials. Please check your username and password.", "error")
-            return redirect(url_for("index", auth_error=1, role="verifier", _anchor="login"))
+            log_event(f"anonymous", "login_failed", f"Failed verifier login: {username}")
+            flash("Invalid Verifier Credentials. Check your name/email and password.", "error")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
 
     return redirect(url_for("index", _anchor="login"))
 
@@ -455,32 +461,36 @@ def register_verifier():
         confirm = request.form["confirm"]
 
         if password != confirm:
-            flash("Passwords do not match", "error")
-            return render_template("register_verifier.html")
+            flash("Passwords do not match. Please try again.", "error")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
 
         conn = get_conn()
         cur = conn.cursor()
         try:
+            # Phase 3: DNA DNA DNA! (Protect BOTH Name and Email)
+            encoded_name = encode_to_dna(username)
+            encoded_email = encode_to_dna(email)
+            
             cur.execute(
                 "INSERT INTO users(role, username, email, password_hash, created_at) VALUES (?,?,?,?,?)",
                 (
                     "verifier",
-                    username,
-                    email,
+                    encoded_name,
+                    encoded_email,
                     generate_password_hash(password),
                     get_indian_time().isoformat(),
                 ),
             )
             conn.commit()
-            flash("Registration Successful. Please Login.", "success")
-            return redirect(url_for("index", _anchor="login"))
+            flash("Personnel Enrollment Successful! Please log in below.", "success")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
         except sqlite3.IntegrityError:
-            flash("Username already exists", "error")
-            return redirect(url_for("index", auth_error=1))
+            flash("Identifier already exists in database.", "error")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
         finally:
             conn.close()
 
-    return redirect(url_for("index", _anchor="register"))
+    return redirect(url_for("index"))
 
 
 # -------------------------------------------------
@@ -573,7 +583,19 @@ def admin_dashboard():
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT * FROM criminals ORDER BY id DESC")
-    records = cur.fetchall()
+    encoded_records = cur.fetchall()
+    
+    # Phase 3: Decode DNA for Admin View
+    records = []
+    for r in encoded_records:
+        r_dict = dict(r)
+        try:
+            r_dict["name"] = decode_from_dna(r["name"])
+            r_dict["crime_type"] = decode_from_dna(r["crime_type"])
+        except Exception:
+            pass # Keep original if it was not DNA encoded (legacy data)
+        records.append(r_dict)
+    
     cur.execute("SELECT * FROM logs ORDER BY id DESC LIMIT 20")
     logs = cur.fetchall()
     conn.close()
@@ -804,14 +826,17 @@ def admin_keys_send():
             # Generate new key
             secret_key = str(uuid.uuid4())
             
+            # Phase 1: Key Hashing
+            hashed_key = generate_password_hash(secret_key)
+            
             cur.execute(
                 "INSERT INTO keys(record_id, secret_key, valid, created_at) VALUES (?,?,?,?)",
-                (record_id, secret_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
+                (record_id, hashed_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
             )
             conn.commit()
             conn.close()
             
-            # Send key via email
+            # Send the REAL key to the verifier (but only the HASH is in our DB)
             send_email_key(contact, criminal["name"], secret_key)
             
             log_event(f"admin:{session.get('admin')}", "generate_key", f"Generated key for record {record_id} and sent to {contact} via email")
@@ -1114,37 +1139,42 @@ def admin_add_record_advanced():
                     honey_name, honey_crime_type, created_at
                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
-                    form_data["name"],
-                    mobile,
-                    crime_type,
+                    encode_to_dna(form_data["name"]), # Phase 3: DNA DNA DNA!
+                    encode_to_dna(mobile),
+                    encode_to_dna(crime_type),
                     f"static/records/primary_vault/{doc_filename}",
                     f"static/tiles/{tile_dirname}",
                     f"static/records/decoy_vault/{honey_doc_filename}", 
-                    form_data["age_gender"],
-                    form_data["address"],
-                    form_data["ps1"],
-                    form_data["fir1"],
-                    form_data["ps2"],
-                    form_data["fir2"],
-                    form_data["ps3"],
-                    form_data["arrest_date"],
-                    form_data["case1"],
-                    form_data["ps4_section"],
-                    form_data["case2"],
-                    form_data["id_marks"],
-                    honey_data["name"],
-                    honey_data["crime_type"],
+                    encode_to_dna(form_data["age_gender"]),
+                    encode_to_dna(form_data["address"]),
+                    encode_to_dna(form_data["ps1"]),
+                    encode_to_dna(form_data["fir1"]),
+                    encode_to_dna(form_data["ps2"]),
+                    encode_to_dna(form_data["fir2"]),
+                    encode_to_dna(form_data["ps3"]),
+                    encode_to_dna(form_data["arrest_date"]),
+                    encode_to_dna(form_data["case1"]),
+                    encode_to_dna(form_data["ps4_section"]),
+                    encode_to_dna(form_data["case2"]),
+                    encode_to_dna(form_data["id_marks"]),
+                    encode_to_dna(honey_data["name"]),
+                    encode_to_dna(honey_data["crime_type"]),
                     get_indian_time().isoformat(),
                 ),
             )
             record_id = cur.lastrowid
             
-            # Access Key
-            secret_key = str(uuid.uuid4())
+            # Phase 1: Hash the key
+            hashed_key = generate_password_hash(secret_key)
             cur.execute(
                 "INSERT INTO keys(record_id, secret_key, valid, created_at) VALUES (?,?,?,?)",
-                (record_id, secret_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
+                (record_id, hashed_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
             )
+            
+            # Phase 2: Encrypt the Image Files (Primary & Honey)
+            encrypt_file(str(doc_path))
+            encrypt_file(str(honey_doc_path))
+            
             conn.commit()
             conn.close()
             
@@ -1361,26 +1391,35 @@ def verifier_retrieve():
         
         # Check if key exists and is valid
         cur.execute(
-            "SELECT k.record_id, k.valid, c.name, c.crime_type, c.photo_path FROM keys k LEFT JOIN criminals c ON k.record_id = c.id WHERE k.secret_key = ?",
-            (key,)
+            "SELECT k.*, c.name, c.crime_type, c.photo_path FROM keys k LEFT JOIN criminals c ON k.record_id = c.id WHERE k.valid = 1"
         )
-        key_data = cur.fetchone()
+        all_keys = cur.fetchall()
         
-        if key_data and key_data["valid"]:
+        target_key_data = None
+        for row in all_keys:
+            if check_password_hash(row["secret_key"], key): # Phase 1: Validate Hashed Key
+                target_key_data = row
+                break
+        
+        if target_key_data:
             # Valid key - return original data
-            log_event(f"verifier:{session.get('verifier')}", "key_used", f"Successfully used key for record {key_data['record_id']}")
+            log_event(f"verifier:{session.get('verifier')}", "key_used", f"Successfully used key for record {target_key_data['record_id']}")
             conn.close()
+            # Phase 3: Decode DNA DNA DNA!
+            real_name = decode_from_dna(target_key_data["name"])
+            real_crime = decode_from_dna(target_key_data["crime_type"])
+            
             return render_template(
                 "verifier_result.html",
-                record_id=key_data["record_id"],
-                name=key_data["name"],
-                crime_type=key_data["crime_type"],
-                photo_path=to_static_filename(key_data["photo_path"]),
-                download_url=url_for("download_record", record_id=key_data["record_id"]),
+                record_id=target_key_data["record_id"],
+                name=real_name,
+                crime_type=real_crime,
+                photo_path=to_static_filename(target_key_data["photo_path"]),
+                download_url=url_for("download_record", record_id=target_key_data["record_id"]),
                 get_indian_time=get_indian_time
             )
         else:
-            # STRICT HONEY ENCRYPTION LOGIC:
+            # Phase 4 (True Honey): Serve Decoy Data
             # Never redirect to login, never say 'invalid key'.
             
             # 1. Try to find a real decoy record
@@ -1461,17 +1500,18 @@ def download_record(record_id):
             flash("Record not found", "error")
             return redirect(url_for("verifier_view"))
         
-        # Convert relative path to absolute path
         photo_path = BASE_DIR / record["photo_path"].replace("static/", "static/")
         
         if photo_path.exists():
-            return send_file(str(photo_path), as_attachment=True, download_name=f"criminal_record_{record_id}.jpg")
+            # Phase 2: Decrypt encrypted file from disk into RAM (Memory)
+            file_bytes = decrypt_file_to_bytes(str(photo_path))
+            return send_file(io.BytesIO(file_bytes), as_attachment=True, download_name=f"official_forensic_doc_{record_id}.png")
         else:
             flash("File not found", "error")
             return redirect(url_for("verifier_view"))
             
     except Exception as e:
-        flash(f"Error downloading file: {str(e)}", "error")
+        flash(f"Error during secure download: {str(e)}", "error")
         return redirect(url_for("verifier_view"))
 
 
