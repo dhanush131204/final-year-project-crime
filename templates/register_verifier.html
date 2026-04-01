@@ -54,8 +54,10 @@
         <input type="password" name="confirm" class="styled-input" placeholder="Repeat password" required />
       </div>
 
-      <button type="submit" class="btn-premium"
-        style="background: linear-gradient(135deg, var(--accent-secondary), #0369a1);">INITIALIZE ENROLLMENT</button>
+      <button type="submit" class="btn-premium btn-pill" onclick="handleAuthAction(this, 'ENROLLING...')">
+        <span class="loader-inline"></span>
+        <span class="btn-text">INITIALIZE ENROLLMENT</span>
+      </button>
     </form>
 
     <div style="text-align: center; margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
@@ -67,6 +69,20 @@
         style="font-size: 0.8rem; padding: 0.5rem; text-decoration: none;">← BACK TO HOME</a>
     </div>
   </div>
+
+  <script>
+    function handleAuthAction(btn, loadingText) {
+      const form = btn.closest('form');
+      if (form && form.checkValidity()) {
+        btn.disabled = true;
+        const loader = btn.querySelector('.loader-inline');
+        const textSpan = btn.querySelector('.btn-text');
+        if (loader) loader.style.display = 'block';
+        if (textSpan) textSpan.innerText = loadingText || 'PROCESSING...';
+        form.submit();
+      }
+    }
+  </script>
 </body>
 
 </html>

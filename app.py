@@ -380,6 +380,8 @@ def login_admin():
             flash("Invalid Admin Credentials", "error")
             return redirect(url_for("index", auth_error=1))
             
+    return render_template("login_admin.html")
+            
 @app.route("/admin/verify-action", methods=["POST"])
 def admin_verify_action():
     if "admin" not in session:

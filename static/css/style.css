@@ -113,13 +113,13 @@ body::before {
   height: 100%;
   /* High-Tech Forensic Deep Blue Glow */
   background: 
-    radial-gradient(circle at center, rgba(30, 58, 138, 0) 0%, rgba(10, 25, 47, 0.95) 100%),
-    url('https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2070&auto=format&fit=crop');
+    radial-gradient(circle at center, rgba(10, 25, 47, 0.5) 0%, rgba(10, 25, 47, 0.98) 100%),
+    url('../images/bg_architecture.png');
   background-size: cover;
   background-position: center;
   z-index: -2;
   animation: backgroundPulse 120s linear infinite;
-  filter: contrast(1.1) brightness(0.85);
+  filter: blur(3px) contrast(1.1) brightness(0.6);
 }
 
 body::after {
@@ -796,6 +796,36 @@ select:focus {
 
 .doc-row span:first-child {
   font-weight: 800;
+}
+
+/* Global Loading Animations */
+.loader-inline {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top: 2px solid #fff;
+  border-right: 2px solid transparent;
+  animation: spin 0.8s linear infinite;
+  margin-right: 10px;
+}
+
+.btn-premium.disabled, 
+.btn-premium:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1024px) {

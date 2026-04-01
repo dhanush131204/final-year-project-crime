@@ -148,17 +148,31 @@
     .btn-cancel:hover {
       background: rgba(255, 255, 255, 0.05);
       color: var(--text-primary);
+    /* Global Button Styles */
+    .btn-pill {
+      border-radius: 50px !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      cursor: pointer;
     }
-    
-    .loading-spinner {
+
+    .btn-pill:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .loader-inline {
       display: none;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(0,0,0,0.1);
-      border-left-color: #000;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
+      border-top-color: currentColor; /* Matches text color */
+      animation: spin 1s ease-in-out infinite;
     }
 
     @keyframes spin {
@@ -469,6 +483,19 @@
         verifyBtn.disabled = false;
       }
     });
+
+    // Global function for button loading states
+    function handleAuthAction(btn, loadingText) {
+      const form = btn.closest('form');
+      if (form && form.checkValidity()) {
+        btn.disabled = true;
+        const loader = btn.querySelector('.loader-inline');
+        const textSpan = btn.querySelector('.btn-text');
+        if (loader) loader.style.display = 'block';
+        if (textSpan) textSpan.innerText = loadingText || 'PROCESSING...';
+        form.submit();
+      }
+    }
 
     // Automatically hide alert messages after 5 seconds
     document.addEventListener("DOMContentLoaded", function() {

@@ -78,7 +78,10 @@
                 <label class="dark-label">PASSWORD</label>
                 <input type="password" name="password" class="modal-input dark-input" placeholder="••••••••" required>
             </div>
-            <button type="submit" class="btn-modal" style="background: #00f2ff; color: #000;">AUTHORIZE ACCESS</button>
+            <button type="submit" class="btn-modal" style="background: #00f2ff; color: #000;" onclick="handleLogin(this)">
+                <span class="loader"></span>
+                <span class="btn-text">AUTHORIZE ACCESS</span>
+            </button>
         </form>
     </div>
 
@@ -103,7 +106,10 @@
                     <label class="light-label">PASSWORD</label>
                     <input type="password" name="password" class="modal-input" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="btn-modal">SIGN IN TO PORTAL</button>
+                <button type="submit" class="btn-modal" onclick="handleLogin(this)">
+                    <span class="loader"></span>
+                    <span class="btn-text">SIGN IN TO PORTAL</span>
+                </button>
             </form>
 
             <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: #666;">
@@ -138,7 +144,10 @@
                     <label class="light-label">CONFIRM PASSWORD</label>
                     <input type="password" name="confirm" class="modal-input" placeholder="••••••••" required style="padding: 0.75rem;">
                 </div>
-                <button type="submit" class="btn-modal" style="margin-top: 1rem; padding: 0.85rem;">AUTHORIZE ACCOUNT CREATION</button>
+                <button type="submit" class="btn-modal" style="margin-top: 1rem; padding: 0.85rem;" onclick="handleLogin(this)">
+                    <span class="loader"></span>
+                    <span class="btn-text">AUTHORIZE ACCOUNT CREATION</span>
+                </button>
             </form>
 
             <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: #666;">
@@ -281,11 +290,54 @@
             color: #fff;
             border: none;
             padding: 1rem;
-            border-radius: 10px;
+            border-radius: 50px; /* Circular pill shape */
             font-weight: 700;
             margin-top: 1.5rem;
             cursor: pointer;
             transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-modal:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top: 3px solid #000;
+            border-right: 3px solid transparent;
+            animation: spin 0.8s linear infinite;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.2));
+        }
+
+        /* White loader for verifier buttons */
+        #verifier-card .loader {
+            border-top-color: #fff;
+            border-bottom-color: transparent;
+            border-left-color: rgba(255,255,255,0.2);
+            border-right-color: transparent;
+        }
+
+        .btn-modal.loading {
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .modal-close {
@@ -316,6 +368,28 @@
     </style>
 
     <script>
+        function handleLogin(btn) {
+            const form = btn.closest('form');
+            if (form && form.checkValidity()) {
+                const loader = btn.querySelector('.loader');
+                const btnText = btn.querySelector('.btn-text');
+                
+                // Visual feedback
+                if (loader) loader.style.display = 'inline-block';
+                if (btnText) {
+                    btnText.innerText = 'AUTHORIZING...';
+                    btnText.style.opacity = '0.7';
+                }
+                
+                // Add loading animation class
+                btn.classList.add('loading');
+                
+                // Prevent multiple clicks while allowing form submission
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.8';
+            }
+        }
+
         function openAdmin() {
             closeAuth();
             document.getElementById('modal-overlay').classList.add('active');

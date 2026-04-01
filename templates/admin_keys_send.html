@@ -32,9 +32,12 @@
       </div>
 
       <div style="margin-top: 2.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
-        <button type="submit" class="btn-premium" style="margin-bottom: 1rem;">EXECUTE KEY DISPATCH</button>
-        <a href="{{ url_for('admin_keys') }}" class="btn-ghost"
-          style="width: 100%; padding: 1rem; border-radius: 12px; display: block; text-align: center; font-weight: 600;">CANCEL</a>
+        <button type="submit" class="btn-premium btn-pill" style="width: 100%; margin-bottom: 1rem;" onclick="handleAuthAction(this, 'DISPATCHING...')">
+          <span class="loader-inline"></span>
+          <span class="btn-text">EXECUTE KEY DISPATCH</span>
+        </button>
+        <a href="{{ url_for('admin_keys') }}" class="btn-ghost btn-pill"
+          style="width: 100%; padding: 1rem; display: block; text-align: center; font-weight: 600;">CANCEL</a>
       </div>
     </form>
   </div>

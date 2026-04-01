@@ -13,7 +13,7 @@
     <div class="nav-logo">SENTINEL FORENSIC HUB</div>
     <div class="nav-links">
       <a href="{{ url_for('verifier_view') }}">NEW SEARCH</a>
-      <a href="{{ url_for('logout') }}" style="color: var(--danger-primary);">LOGOUT terminal</a>
+      <a href="{{ url_for('logout') }}" style="color: var(--danger-primary);">LOGOUT</a>
     </div>
   </nav>
 
@@ -39,16 +39,15 @@
           <div
             style="width: 100%; aspect-ratio: 1; background: rgba(0,242,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--glass-border); margin-bottom: 1rem; overflow: hidden;">
             {% if photo_path %}
-              <img src="{{ url_for('static', filename=photo_path) }}" 
-                   style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;" 
-                   alt="Verified Forensic Subject">
+            <img src="{{ url_for('static', filename=photo_path) }}"
+              style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;" alt="Verified Forensic Subject">
             {% else %}
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                stroke="var(--accent-primary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
-                style="opacity: 0.5;">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+              stroke="var(--accent-primary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+              style="opacity: 0.5;">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
             {% endif %}
           </div>
           <span class="badge" style="background: rgba(0,242,255,0.1); color: var(--accent-primary);">VALIDATED
