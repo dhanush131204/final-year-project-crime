@@ -30,10 +30,17 @@ ENV/
 .env
 
 # Databases (Un-commented to share with teammate)
-atabase/*.db
+
+database/*.db
 database/*.sqlite3
 
 # Static / Uploaded Content (User Data) (Un-commented to share with teammate)
+
+database/*.db
+database/*.sqlite3
+
+Static / Uploaded Content (User Data) (Un-commented to share with teammate)
+
 static/uploads/*
 static/tiles/*
 static/honey_data/*

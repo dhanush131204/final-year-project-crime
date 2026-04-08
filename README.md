@@ -240,4 +240,4 @@ VERIFIER EMAIL: cid_desk@pune_police.gov
 Flask==2.3.3
 Pillow==10.0.1
 Werkzeug==2.3.7
-twilio==8.5.0
+twilio==8.5.0

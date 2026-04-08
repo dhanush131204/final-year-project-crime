@@ -23,24 +23,21 @@
         </select>
       </div>
 
-      <div class="form-group">
-        <label>TRANSMISSION METHOD</label>
-        <select name="contact_type" required
-          style="padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff; border-radius: 8px; width: 100%;">
-          <option value="email">SECURE EMAIL PORTAL</option>
-          <option value="sms">SECURE SMS TRANSMISSION</option>
-        </select>
-      </div>
+      <!-- Transmission Method: SECURE EMAIL (Simplified) -->
+      <input type="hidden" name="contact_type" value="email">
 
       <div class="form-group">
-        <label>RECIPIENT ENDPOINT</label>
-        <input type="text" name="contact" placeholder="agent@police.gov or +1234567890" required />
+        <label>RECIPIENT EMAIL</label>
+        <input type="email" name="contact" placeholder="agent@police.gov" required />
       </div>
 
       <div style="margin-top: 2.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
-        <button type="submit" class="btn-premium" style="margin-bottom: 1rem;">EXECUTE KEY DISPATCH</button>
-        <a href="{{ url_for('admin_keys') }}" class="btn-ghost"
-          style="width: 100%; padding: 1rem; border-radius: 12px; display: block; text-align: center; font-weight: 600;">CANCEL</a>
+        <button type="submit" class="btn-premium btn-pill" style="width: 100%; margin-bottom: 1rem;" onclick="handleAuthAction(this, 'DISPATCHING...')">
+          <span class="loader-inline"></span>
+          <span class="btn-text">EXECUTE KEY DISPATCH</span>
+        </button>
+        <a href="{{ url_for('admin_keys') }}" class="btn-ghost btn-pill"
+          style="width: 100%; padding: 1rem; display: block; text-align: center; font-weight: 600;">CANCEL</a>
       </div>
     </form>
   </div>

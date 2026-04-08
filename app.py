@@ -26,9 +26,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 # Utils
-from utils.dna_logic import encode_to_dna
+from utils.dna_logic import encode_to_dna, decode_from_dna
 from utils.image_processor import split_image_into_tiles
 from utils.honey_logic import generate_honey_image
+import io
 
 # Indian timezone
 INDIAN_TZ = pytz.timezone('Asia/Kolkata')
@@ -144,6 +145,7 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         role TEXT,
         username TEXT UNIQUE,
+        email TEXT UNIQUE,
         password_dna TEXT,
         password_hash TEXT,
         created_at TEXT
@@ -201,19 +203,33 @@ def init_db():
 
     # Migration for logs: Add user_agent if it doesn't exist
     cur.execute("PRAGMA table_info(logs)")
-    cols = [row[1] for row in cur.fetchall()]
-    if "user_agent" not in cols:
+    logs_cols = [row[1] for row in cur.fetchall()]
+    if "user_agent" not in logs_cols:
         cur.execute("ALTER TABLE logs ADD COLUMN user_agent TEXT")
+
+    # Migration for users: Add email if it doesn't exist
+    cur.execute("PRAGMA table_info(users)")
+    user_cols = [row[1] for row in cur.fetchall()]
+    if "email" not in user_cols:
+        cur.execute("ALTER TABLE users ADD COLUMN email TEXT")
 
     # Migration for criminals: Add new columns if they don't exist
     cur.execute("PRAGMA table_info(criminals)")
     criminal_cols = [row[1] for row in cur.fetchall()]
-    if "id_marks" not in criminal_cols:
-        cur.execute("ALTER TABLE criminals ADD COLUMN id_marks TEXT")
-    if "honey_name" not in criminal_cols:
-        cur.execute("ALTER TABLE criminals ADD COLUMN honey_name TEXT")
-    if "honey_crime_type" not in criminal_cols:
-        cur.execute("ALTER TABLE criminals ADD COLUMN honey_crime_type TEXT")
+    
+    needed_cols = [
+        "age_gender", "address", "ps1", "fir1", "ps2", "fir2", "ps3", 
+        "arrest_date", "case1", "ps4_section", "case2", "id_marks", 
+        "honey_name", "honey_crime_type"
+    ]
+    
+    for col in needed_cols:
+        if col not in criminal_cols:
+            try:
+                cur.execute(f"ALTER TABLE criminals ADD COLUMN {col} TEXT")
+                print(f"Added missing column: {col}")
+            except sqlite3.Error as e:
+                print(f"Error adding column {col}: {e}")
 
     # Default Admin
     cur.execute("SELECT id FROM users WHERE role='admin'")
@@ -252,51 +268,50 @@ def log_event(actor, action, details=None):
 
 
 def send_email_key(email, name, key):
-    """Send access key via email to verifier"""
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
+    """Send access key via email to verifier using Brevo API"""
+    import requests
     
-    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        error_msg = f"Email credentials not configured. GMAIL_USER: {GMAIL_USER}, GMAIL_APP_PASSWORD: {'***' if GMAIL_APP_PASSWORD else 'NOT SET'}"
+    brevo_api_key = os.getenv('BREVO_API_KEY')
+    sender_email = os.getenv('GMAIL_USER') or 'admin@crimesecure.local'
+    
+    if not brevo_api_key:
+        error_msg = f"Brevo API Key not configured. Using fallback log."
         print(error_msg)
         print(f"Access Key for {name}: {key}")
         flash(f"Email not configured. Access Key: {key}", "warning")
         return False
     
     try:
-        msg = MIMEMultipart()
-        msg['From'] = GMAIL_USER
-        msg['To'] = email
-        msg['Subject'] = "DNA Forensic System - Access Key"
+        url = "https://api.brevo.com/v3/smtp/email"
         
-        body = f"""Dear Verifier,
-
-Access Key for: {name}
-Key: {key}
-
-Use this key in the DNA Forensic System to verify the criminal record.
-
-⚠️ Keep this key confidential!
-
-Best regards,
-DNA Forensic Team"""
+        payload = {
+            "sender": {"email": sender_email, "name": "DNA Forensic Team"},
+            "to": [{"email": email, "name": "Verifier"}],
+            "subject": "DNA Forensic System - Access Key",
+            "textContent": f"Dear Verifier,\n\nAccess Key for: {name}\nKey: {key}\n\nUse this key in the DNA Forensic System to verify the criminal record.\n\n⚠️ Keep this key confidential!\n\nBest regards,\nDNA Forensic Team"
+        }
         
-        msg.attach(MIMEText(body, 'plain'))
+        headers = {
+            "accept": "application/json",
+            "api-key": brevo_api_key,
+            "content-type": "application/json"
+        }
         
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        server.sendmail(GMAIL_USER, email, msg.as_string())
-        server.quit()
+        response = requests.post(url, json=payload, headers=headers)
         
-        log_event("system", "email_sent", f"Verification key sent to {email} for {name}")
-        flash(f"Access key sent successfully to {email}", "success")
-        return True
-        
+        if response.status_code in [200, 201, 202]:
+            log_event("system", "email_sent", f"Verification key sent to {email} for {name} via Brevo")
+            flash(f"Access key sent successfully to {email}", "success")
+            return True
+        else:
+            print(f"Brevo Error: {response.text}")
+            log_event("system", "email_failed", f"Brevo API failed: {response.text}")
+            flash(f"Email failed to send. Access Key: {key}", "warning")
+            return False
+            
     except Exception as e:
         print(f"Failed to send email to {email}: {str(e)}")
-        log_event("system", "email_failed", f"Failed to send email to {email}: {str(e)}")
+        log_event("system", "email_failed", f"Exception: {str(e)}")
         flash(f"Email failed. Access Key: {key}", "warning")
         return False
 
@@ -366,6 +381,8 @@ def login_admin():
             flash("Invalid Admin Credentials", "error")
             return redirect(url_for("index", auth_error=1))
             
+    return render_template("login_admin.html")
+            
 @app.route("/admin/verify-action", methods=["POST"])
 def admin_verify_action():
     if "admin" not in session:
@@ -403,25 +420,33 @@ def require_admin():
 @app.route("/login/verifier", methods=["GET", "POST"])
 def login_verifier():
     if request.method == "POST":
-        username = request.form["username"]
+        username = request.form["username"] # This is the input from Modal (can be Name or Email)
         password = request.form["password"]
 
         conn = get_conn()
         cur = conn.cursor()
+        
+        # DNA Protection Search
+        encoded_input = encode_to_dna(username)
+        
+        # Check DNA username OR DNA email
         cur.execute(
-            "SELECT * FROM users WHERE role='verifier' AND username=?",
-            (username,),
+            "SELECT * FROM users WHERE (role='verifier' OR role='Verifier') AND (username=? OR email=? OR username=? OR email=?)",
+            (username, username, encoded_input, encoded_input),
         )
         user = cur.fetchone()
         conn.close()
 
-        if user and user["password_hash"] and check_password_hash(user["password_hash"], password):
+        if user and check_password_hash(user["password_hash"], password):
+            # Session uses the plain-text name for display
             session["verifier"] = username
-            log_event(f"verifier:{username}", "login")
+            session["role"] = "verifier"
+            log_event(f"verifier:{username}", "login", "Authorized via Home Modal (DNA Active)")
             return redirect(url_for("verifier_view"))
         else:
-            flash("Invalid Verifier Credentials", "error")
-            return redirect(url_for("index", auth_error=1))
+            log_event(f"anonymous", "login_failed", f"Failed verifier login: {username}")
+            flash("Invalid Verifier Credentials. Check your name/email and password.", "error")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
 
     return redirect(url_for("index", _anchor="login"))
 
@@ -429,36 +454,42 @@ def login_verifier():
 @app.route("/register/verifier", methods=["GET", "POST"])
 def register_verifier():
     if request.method == "POST":
-        username = request.form["username"]
+        username = request.form["username"] # Full Name
+        email = request.form["email"]       # Email Address
         password = request.form["password"]
         confirm = request.form["confirm"]
 
         if password != confirm:
-            flash("Passwords do not match", "error")
-            return render_template("register_verifier.html")
+            flash("Passwords do not match. Please try again.", "error")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
 
         conn = get_conn()
         cur = conn.cursor()
         try:
+            # Phase 3: DNA DNA DNA! (Protect BOTH Name and Email)
+            encoded_name = encode_to_dna(username)
+            encoded_email = encode_to_dna(email)
+            
             cur.execute(
-                "INSERT INTO users(role, username, password_hash, created_at) VALUES (?,?,?,?)",
+                "INSERT INTO users(role, username, email, password_hash, created_at) VALUES (?,?,?,?,?)",
                 (
                     "verifier",
-                    username,
+                    encoded_name,
+                    encoded_email,
                     generate_password_hash(password),
                     get_indian_time().isoformat(),
                 ),
             )
             conn.commit()
-            flash("Registration Successful", "success")
-            return redirect(url_for("index", _anchor="login"))
+            flash("Personnel Enrollment Successful! Please log in below.", "success")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
         except sqlite3.IntegrityError:
-            flash("Username already exists", "error")
-            return redirect(url_for("index", auth_error=1))
+            flash("Identifier already exists in database.", "error")
+            return redirect(url_for("index", auth_error=1, role="verifier"))
         finally:
             conn.close()
 
-    return redirect(url_for("index", _anchor="register"))
+    return redirect(url_for("index"))
 
 
 # -------------------------------------------------
@@ -507,6 +538,42 @@ def admin_analytics():
     )
 
 
+@app.route("/admin/users")
+def admin_users():
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+    
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT id, role, username, email, created_at FROM users ORDER BY id DESC")
+    users = cur.fetchall()
+    conn.close()
+    
+    return render_template("admin_users.html", users=users)
+
+
+@app.route("/admin/users/delete/<int:user_id>", methods=["POST"])
+def admin_delete_user(user_id):
+    if not require_admin():
+        return redirect(url_for("login_admin"))
+    
+    if session.get("admin") == "admin" and user_id == 1:
+        flash("Cannot delete the primary admin account.", "error")
+        return redirect(url_for("admin_users"))
+
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+        flash("User deleted successfully.", "success")
+    except Exception as e:
+        flash(f"Error deleting user: {str(e)}", "error")
+        
+    return redirect(url_for("admin_users"))
+
+
 @app.route("/admin")
 def admin_dashboard():
     if not require_admin():
@@ -515,7 +582,14 @@ def admin_dashboard():
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT * FROM criminals ORDER BY id DESC")
-    records = cur.fetchall()
+    encoded_records = cur.fetchall()
+    
+    # Crime data is now stored as plain text (no DNA encoding)
+    records = []
+    for r in encoded_records:
+        r_dict = dict(r)
+        records.append(r_dict)
+    
     cur.execute("SELECT * FROM logs ORDER BY id DESC LIMIT 20")
     logs = cur.fetchall()
     conn.close()
@@ -746,23 +820,21 @@ def admin_keys_send():
             # Generate new key
             secret_key = str(uuid.uuid4())
             
+            # Phase 1: Key Hashing
+            hashed_key = generate_password_hash(secret_key)
+            
             cur.execute(
                 "INSERT INTO keys(record_id, secret_key, valid, created_at) VALUES (?,?,?,?)",
-                (record_id, secret_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
+                (record_id, hashed_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
             )
             conn.commit()
             conn.close()
             
-            # Send key based on contact type
-            if contact_type == "email":
-                send_email_key(contact, criminal["name"], secret_key)
-                method = "email"
-            else:
-                send_sms_key(contact, criminal["name"], secret_key)
-                method = "SMS"
+            # Send the REAL key to the verifier (but only the HASH is in our DB)
+            send_email_key(contact, criminal["name"], secret_key)
             
-            log_event(f"admin:{session.get('admin')}", "generate_key", f"Generated key for record {record_id} and sent to {contact}")
-            flash(f"Access key generated and sent to {contact} via {method}!", "success")
+            log_event(f"admin:{session.get('admin')}", "generate_key", f"Generated key for record {record_id} and sent to {contact} via email")
+            flash(f"Access key generated and sent to {contact} via SECURE EMAIL!", "success")
             return redirect(url_for("admin_keys"))
             
         except Exception as e:
@@ -1086,12 +1158,17 @@ def admin_add_record_advanced():
             )
             record_id = cur.lastrowid
             
-            # Access Key
+            # Generate access key for this record
             secret_key = str(uuid.uuid4())
+            
+            # Phase 1: Hash the key
+            hashed_key = generate_password_hash(secret_key)
             cur.execute(
                 "INSERT INTO keys(record_id, secret_key, valid, created_at) VALUES (?,?,?,?)",
-                (record_id, secret_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
+                (record_id, hashed_key, 1, datetime.datetime.now(datetime.UTC).isoformat()),
             )
+            
+            # Images stored as plain PNG files (no encryption)
             conn.commit()
             conn.close()
             
@@ -1300,7 +1377,7 @@ def verifier_retrieve():
     key = request.form.get("key")
     
     if not key:
-        return render_template("verifier_view.html", error="Please enter a key")
+        return render_template("verifier_view.html", error="Please enter a forensic access key.")
     
     try:
         conn = get_conn()
@@ -1308,49 +1385,69 @@ def verifier_retrieve():
         
         # Check if key exists and is valid
         cur.execute(
-            "SELECT k.record_id, k.valid, c.name, c.crime_type, c.photo_path FROM keys k LEFT JOIN criminals c ON k.record_id = c.id WHERE k.secret_key = ?",
-            (key,)
+            "SELECT k.*, c.name, c.crime_type, c.photo_path FROM keys k LEFT JOIN criminals c ON k.record_id = c.id WHERE k.valid = 1"
         )
-        key_data = cur.fetchone()
+        all_keys = cur.fetchall()
         
-        if key_data and key_data["valid"]:
+        target_key_data = None
+        for row in all_keys:
+            if check_password_hash(row["secret_key"], key): # Phase 1: Validate Hashed Key
+                target_key_data = row
+                break
+        
+        if target_key_data:
             # Valid key - return original data
-            log_event(f"verifier:{session.get('verifier')}", "key_used", f"Successfully used key for record {key_data['record_id']}")
-            
+            log_event(f"verifier:{session.get('verifier')}", "key_used", f"Successfully used key for record {target_key_data['record_id']}")
+            conn.close()
+            # Crime data is stored as plain text (no DNA decoding needed)
             return render_template(
                 "verifier_result.html",
-                record_id=key_data["record_id"],
-                name=key_data["name"],
-                crime_type=key_data["crime_type"],
-                photo_path=to_static_filename(key_data["photo_path"]),
-                download_url=url_for("download_record", record_id=key_data["record_id"]),
+                record_id=target_key_data["record_id"],
+                name=target_key_data["name"],
+                crime_type=target_key_data["crime_type"],
+                photo_path=to_static_filename(target_key_data["photo_path"]),
+                download_url=url_for("download_record", record_id=target_key_data["record_id"]),
                 get_indian_time=get_indian_time
             )
         else:
-            # Invalid/wrong key - return honey/decoy data
-            # First, check if we can serve a professional Honey Document from our database
+            # Phase 4 (True Honey): Serve Decoy Data
+            # Never redirect to login, never say 'invalid key'.
+            
+            # 1. Try to find a real decoy record
             cur.execute("SELECT id, honey_name, honey_crime_type, honey_path FROM criminals WHERE honey_name IS NOT NULL ORDER BY RANDOM() LIMIT 1")
             decoy_record = cur.fetchone()
+            conn.close()
+            
+            log_event(f"verifier:{session.get('verifier')}", "honey_triggered", f"Invalid key: {key[:8]}... - Served Decoy File")
             
             if decoy_record:
-                log_event(f"verifier:{session.get('verifier')}", "honey_triggered", f"Invalid key used, served secure protection data")
+                # Return real database decoy
                 return render_template(
                     "verifier_result.html",
                     record_id=f"H{decoy_record['id']}",
-                    name=decoy_record["honey_name"] or "Vikram Rathore",
-                    crime_type=decoy_record["honey_crime_type"] or "Official Record",
+                    name=decoy_record["honey_name"],
+                    crime_type=decoy_record["honey_crime_type"],
                     photo_path=to_static_filename(decoy_record["honey_path"]),
                     download_url=url_for("download_honey", record_id=decoy_record["id"]),
                     get_indian_time=get_indian_time
                 )
-            
-            # Legacy fallback
-            return render_template("verifier_view.html", error="No secure data found for this key")
-        
-        conn.close()
+            else:
+                # 2. Emergency Fallback: If DB is fresh/empty, generate a virtual decoy
+                # we don't redirect, we show a 'Virtual Decoy'
+                return render_template(
+                    "verifier_result.html",
+                    record_id="S-00892",
+                    name="Rajesh Sharma",
+                    crime_type="FINANCIAL FRAUD",
+                    photo_path="records/decoy_vault/placeholder_honey.png", # Simulated path
+                    download_url="#",
+                    get_indian_time=get_indian_time,
+                    virtual_honey=True
+                )
         
     except Exception as e:
-        return render_template("verifier_view.html", error=f"Error processing key: {str(e)}")
+        if 'conn' in locals(): conn.close()
+        return render_template("verifier_view.html", error=f"Forensic Engine Error: {str(e)}")
 
 
 @app.route("/download/honey/<int:record_id>")
@@ -1394,17 +1491,18 @@ def download_record(record_id):
             flash("Record not found", "error")
             return redirect(url_for("verifier_view"))
         
-        # Convert relative path to absolute path
         photo_path = BASE_DIR / record["photo_path"].replace("static/", "static/")
         
         if photo_path.exists():
-            return send_file(str(photo_path), as_attachment=True, download_name=f"criminal_record_{record_id}.jpg")
+            # Phase 2: Decrypt encrypted file from disk into RAM (Memory)
+            file_bytes = decrypt_file_to_bytes(str(photo_path))
+            return send_file(io.BytesIO(file_bytes), as_attachment=True, download_name=f"official_forensic_doc_{record_id}.png")
         else:
             flash("File not found", "error")
             return redirect(url_for("verifier_view"))
             
     except Exception as e:
-        flash(f"Error downloading file: {str(e)}", "error")
+        flash(f"Error during secure download: {str(e)}", "error")
         return redirect(url_for("verifier_view"))
 
 

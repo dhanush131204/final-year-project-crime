@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login | Crime Secure</title>
+  <title>Admin Login | SENTINEL FORENSIC HUB</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 
@@ -47,7 +47,10 @@
         <input type="password" name="password" class="styled-input" placeholder="••••••••" required />
       </div>
 
-      <button type="submit" class="btn-premium">AUTHORIZE ACCESS</button>
+      <button type="submit" class="btn-premium btn-pill" id="login-btn" onclick="handleAuthAction(this, 'VERIFYING...')">
+        <span class="loader-inline"></span>
+        <span class="btn-text">AUTHORIZE ACCESS</span>
+      </button>
     </form>
 
     <div style="text-align: center; margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
@@ -57,6 +60,20 @@
       </a>
     </div>
   </div>
+
+  <script>
+    function handleAuthAction(btn, loadingText) {
+      const form = btn.closest('form');
+      if (form && form.checkValidity()) {
+        btn.disabled = true;
+        const loader = btn.querySelector('.loader-inline');
+        const textSpan = btn.querySelector('.btn-text');
+        if (loader) loader.style.display = 'block';
+        if (textSpan) textSpan.innerText = loadingText || 'PROCESSING...';
+        form.submit();
+      }
+    }
+  </script>
 </body>
 
 </html>

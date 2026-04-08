@@ -8,9 +8,9 @@
 
 :root {
   /* Core Palette - Deep Space & Forensic Cyan */
-  --bg-dark-primary: #05080d;
-  --bg-dark-secondary: #0a0f18;
-  --bg-dark-tertiary: #161e2b;
+  --bg-dark-primary: #0a192f;
+  --bg-dark-secondary: #112240;
+  --bg-dark-tertiary: #1b2a4e;
 
   --accent-primary: #00f2ff;
   --accent-secondary: #0ea5e9;
@@ -96,17 +96,48 @@ html {
 body {
   font-family: 'Outfit', sans-serif;
   background-color: var(--bg-dark-primary);
-  /* Premium Forensic Tech Background with Overlay */
-  background-image: 
-    linear-gradient(to bottom, rgba(5, 8, 13, 0.85), rgba(5, 8, 13, 0.95)),
-    url('https://images.unsplash.com/photo-1639322537228-f710d846310a?auto=format&fit=crop&q=80&w=1932');
-  background-attachment: fixed;
-  background-size: cover;
-  background-position: center;
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* 🧬 UNIQUE ALIVE BACKGROUND SYSTEM */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* High-Tech Forensic Deep Blue Glow */
+  background: 
+    radial-gradient(circle at center, rgba(10, 25, 47, 0.5) 0%, rgba(10, 25, 47, 0.98) 100%),
+    url('../images/bg_architecture.png');
+  background-size: cover;
+  background-position: center;
+  z-index: -2;
+  animation: backgroundPulse 120s linear infinite;
+  filter: blur(3px) contrast(1.1) brightness(0.6);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.03) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+@keyframes backgroundPulse {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.15) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 a {
@@ -765,6 +796,36 @@ select:focus {
 
 .doc-row span:first-child {
   font-weight: 800;
+}
+
+/* Global Loading Animations */
+.loader-inline {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top: 2px solid #fff;
+  border-right: 2px solid transparent;
+  animation: spin 0.8s linear infinite;
+  margin-right: 10px;
+}
+
+.btn-premium.disabled, 
+.btn-premium:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1024px) {
