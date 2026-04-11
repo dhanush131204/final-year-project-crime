@@ -126,6 +126,33 @@ def to_static_filename(path_value):
     return normalized
 
 
+def resolve_existing_mugshot_rel(record):
+    """Return the best available static-relative mugshot path for a record."""
+    if not record:
+        return None
+
+    mugshot_rel = to_static_filename(record["mugshot_path"]) if "mugshot_path" in record.keys() else None
+    if mugshot_rel and (STATIC_DIR / mugshot_rel).exists():
+        return mugshot_rel
+
+    photo_rel = to_static_filename(record["photo_path"]) if record["photo_path"] else None
+    if not photo_rel:
+        return None
+
+    photo_name = Path(photo_rel).name
+    if photo_name.startswith("forensic_doc_"):
+        timestamp = photo_name[len("forensic_doc_"):-len(".png")] if photo_name.endswith(".png") else None
+        if timestamp:
+            matches = sorted(UPLOAD_DIR.glob(f"forensic_face_{timestamp}_*"))
+            if matches:
+                return str(matches[0].relative_to(STATIC_DIR)).replace("\\", "/")
+
+    if (STATIC_DIR / photo_rel).exists():
+        return photo_rel
+
+    return None
+
+
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -159,6 +186,7 @@ def init_db():
         mobile TEXT,
         crime_type TEXT,
         photo_path TEXT,
+        mugshot_path TEXT,
         tile_dir TEXT,
         honey_path TEXT,
         age_gender TEXT,
@@ -218,7 +246,7 @@ def init_db():
     criminal_cols = [row[1] for row in cur.fetchall()]
     
     needed_cols = [
-        "age_gender", "address", "ps1", "fir1", "ps2", "fir2", "ps3", 
+        "mugshot_path", "age_gender", "address", "ps1", "fir1", "ps2", "fir2", "ps3",
         "arrest_date", "case1", "ps4_section", "case2", "id_marks", 
         "honey_name", "honey_crime_type"
     ]
@@ -360,6 +388,9 @@ def logout():
 
 @app.route("/login/admin", methods=["GET", "POST"])
 def login_admin():
+    if request.method == "GET":
+        return redirect(url_for("index"))
+
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -380,8 +411,6 @@ def login_admin():
         else:
             flash("Invalid Admin Credentials", "error")
             return redirect(url_for("index", auth_error=1))
-            
-    return render_template("login_admin.html")
             
 @app.route("/admin/verify-action", methods=["POST"])
 def admin_verify_action():
@@ -994,11 +1023,12 @@ def admin_add_record_page():
             conn = get_conn()
             cur = conn.cursor()
             cur.execute(
-                "INSERT INTO criminals(name, mobile, crime_type, photo_path, tile_dir, honey_path, honey_name, honey_crime_type, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO criminals(name, mobile, crime_type, photo_path, mugshot_path, tile_dir, honey_path, honey_name, honey_crime_type, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 (
                     name,
                     mobile,
                     crime_type,
+                    f"static/records/primary_vault/{filename}",
                     f"static/records/primary_vault/{filename}",
                     f"static/tiles/{tile_dirname}",
                     f"static/records/decoy_vault/{honey_filename}",
@@ -1127,16 +1157,17 @@ def admin_add_record_advanced():
             cur = conn.cursor()
             cur.execute("""
                 INSERT INTO criminals(
-                    name, mobile, crime_type, photo_path, tile_dir, honey_path, 
+                    name, mobile, crime_type, photo_path, mugshot_path, tile_dir, honey_path,
                     age_gender, address, ps1, fir1, ps2, fir2, ps3, 
                     arrest_date, case1, ps4_section, case2, id_marks, 
                     honey_name, honey_crime_type, created_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     form_data["name"],
                     mobile,
                     crime_type,
                     f"static/records/primary_vault/{doc_filename}",
+                    f"static/records/primary_vault/{mugshot_filename}",
                     f"static/tiles/{tile_dirname}",
                     f"static/records/decoy_vault/{honey_doc_filename}", 
                     form_data["age_gender"],
@@ -1222,7 +1253,8 @@ def admin_edit_record(record_id):
         
         try:
             timestamp = get_indian_time().strftime("%Y%m%d_%H%M%S")
-            mugshot_path = BASE_DIR / record["photo_path"].replace("static/", "static/") if record["photo_path"] else None
+            mugshot_rel = resolve_existing_mugshot_rel(record)
+            mugshot_path = (STATIC_DIR / mugshot_rel) if mugshot_rel else None
             
             # 2. Handle Photo Update if provided
             if file and allowed_file(file.filename):
@@ -1237,6 +1269,12 @@ def admin_edit_record(record_id):
                 new_mugshot_path = UPLOAD_DIR / mugshot_filename
                 file.save(str(new_mugshot_path))
                 mugshot_path = new_mugshot_path
+                mugshot_db_path = f"static/records/primary_vault/{mugshot_filename}"
+            else:
+                mugshot_db_path = f"static/{mugshot_rel}" if mugshot_rel else record["mugshot_path"]
+
+            if not mugshot_path or not mugshot_path.exists():
+                raise FileNotFoundError("Original mugshot file could not be found for this record. Please upload the face image again.")
             
             # 3. Re-generate Official Document (Primary Vault)
             doc_filename = f"forensic_doc_{timestamp}.png"
@@ -1275,7 +1313,7 @@ def admin_edit_record(record_id):
             # 7. Update Database
             cur.execute("""
                 UPDATE criminals SET 
-                    name = ?, mobile = ?, crime_type = ?, photo_path = ?, tile_dir = ?, honey_path = ?, 
+                    name = ?, mobile = ?, crime_type = ?, photo_path = ?, mugshot_path = ?, tile_dir = ?, honey_path = ?, 
                     age_gender = ?, address = ?, ps1 = ?, fir1 = ?, ps2 = ?, fir2 = ?, ps3 = ?, 
                     arrest_date = ?, case1 = ?, ps4_section = ?, case2 = ?, id_marks = ?, 
                     honey_name = ?, honey_crime_type = ?
@@ -1283,6 +1321,7 @@ def admin_edit_record(record_id):
                 (
                     form_data["name"], mobile, crime_type, 
                     f"static/records/primary_vault/{doc_filename}",
+                    mugshot_db_path,
                     f"static/tiles/{tile_dirname}",
                     f"static/records/decoy_vault/{honey_doc_filename}",
                     form_data["age_gender"], form_data["address"], form_data["ps1"], form_data["fir1"],
@@ -1304,7 +1343,13 @@ def admin_edit_record(record_id):
             conn.close()
 
     conn.close()
-    return render_template("admin_edit_record.html", record=record, to_static_filename=to_static_filename)
+    preview_mugshot_path = resolve_existing_mugshot_rel(record)
+    return render_template(
+        "admin_edit_record.html",
+        record=record,
+        to_static_filename=to_static_filename,
+        preview_mugshot_path=preview_mugshot_path,
+    )
 @app.route("/admin/records/<int:record_id>/delete", methods=["POST"])
 def admin_delete_record(record_id):
     if not require_admin():
@@ -1315,7 +1360,7 @@ def admin_delete_record(record_id):
         cur = conn.cursor()
         
         # 1. Fetch info for file cleanup
-        cur.execute("SELECT name, photo_path, tile_dir, honey_path FROM criminals WHERE id = ?", (record_id,))
+        cur.execute("SELECT name, photo_path, mugshot_path, tile_dir, honey_path FROM criminals WHERE id = ?", (record_id,))
         record = cur.fetchone()
         
         if not record:
@@ -1327,6 +1372,7 @@ def admin_delete_record(record_id):
         import shutil
         paths_to_delete = []
         if record["photo_path"]: paths_to_delete.append(BASE_DIR / record["photo_path"])
+        if record["mugshot_path"]: paths_to_delete.append(BASE_DIR / record["mugshot_path"])
         if record["honey_path"]: paths_to_delete.append(BASE_DIR / record["honey_path"])
         
         # Delete individual files
